@@ -1,10 +1,10 @@
-# Grant Stream Contracts
+# AgriTrust Protocol Contracts
 
-Smart contracts for managing grant streams with milestone completion proof hashing and integrated dispute resolution system.
+Smart contracts for managing trust streams with milestone completion proof hashing and integrated dispute resolution system.
 
 ## Overview
 
-This repository contains multiple implementations for grant management:
+This repository contains multiple implementations for trust management:
 1. **Soroban (Stellar) Implementation**: High-precision per-second streaming with legal anchoring and cross-chain interoperability.
 2. **Solidity (Ethereum/L2) Implementation**: Milestone-based releasing with integrated dispute resolution and ZK proofs and new work.
 
