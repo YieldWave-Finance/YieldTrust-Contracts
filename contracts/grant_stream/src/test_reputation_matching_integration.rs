@@ -16,14 +16,14 @@ use crate::donor_reputation::*;
 use crate::matching_pool::*;
 use crate::{GrantStatus, REPUTATION_SCALE, BASIS_POINTS, DEFAULT_MIN_FUNDING_THRESHOLD, MAX_REPUTATION_MULTIPLIER, FIXED_POINT_SCALE};
 
-fn create_test_env() -> Env {
+fn create_test_env() -> (Env, Address) {
     let env = Env::default();
-    env.register_contract(None, crate::GrantStreamContract);
     env.mock_all_auths();
-    env
+    let contract_id = env.register_contract(None, crate::GrantStreamContract);
+    (env, contract_id)
 }
 
-fn setup_reputation_and_matching(env: &Env) -> (Address, Address) {
+fn setup_reputation_and_matching(env: &Env, _contract_id: &Address) -> (Address, Address) {
     let admin = Address::generate(env);
     let token_contract = env.register_stellar_asset_contract_v2(admin.clone());
     let token = token_contract.address();
@@ -77,8 +77,9 @@ fn create_donor_with_reputation(env: &Env, success_rate: i128, project_count: u3
 
 #[test]
 fn test_high_reputation_donor_larger_match() {
-    let env = create_test_env();
-    let (admin, token) = setup_reputation_and_matching(&env);
+    let (env, contract_id) = create_test_env();
+    env.as_contract(&contract_id, || {
+        let (admin, token) = setup_reputation_and_matching(&env, &contract_id);
 
     // Create donors with different reputation levels
     let perfect_donor = create_donor_with_reputation(&env, 100 * BASIS_POINTS / 100, 3); // 100% success
@@ -137,12 +138,13 @@ fn test_high_reputation_donor_larger_match() {
     // Verify that matching was calculated correctly
     assert!(total_matched > 0, "Should have matched funds");
     assert!(total_matched <= 1_000_000_000, "Should not exceed pool limit");
+    });
 }
-
 #[test]
 fn test_self_optimizing_matching_rounds() {
-    let env = create_test_env();
-    let (admin, token) = setup_reputation_and_matching(&env);
+    let (env, contract_id) = create_test_env();
+    env.as_contract(&contract_id, || {
+        let (admin, token) = setup_reputation_and_matching(&env, &contract_id);
 
     // Create two projects with different donor quality
     let high_quality_donor = create_donor_with_reputation(&env, 100 * BASIS_POINTS / 100, 5); // Excellent track record
@@ -191,12 +193,13 @@ fn test_self_optimizing_matching_rounds() {
     println!("High-quality project matched: {}", high_quality_matched);
     println!("Low-quality project matched: {}", low_quality_matched);
     println!("Ratio: {}", high_quality_matched as f64 / low_quality_matched as f64);
+    });
 }
-
 #[test]
 fn test_reputation_farming_structural_block() {
-    let env = create_test_env();
-    let (admin, token) = setup_reputation_and_matching(&env);
+    let (env, contract_id) = create_test_env();
+    env.as_contract(&contract_id, || {
+        let (admin, token) = setup_reputation_and_matching(&env, &contract_id);
 
     let farmer = Address::generate(&env);
     
@@ -251,12 +254,13 @@ fn test_reputation_farming_structural_block() {
     assert_eq!(farmer_contrib.total_contributions, legitimate_contrib.total_contributions);
 
     // This shows the structural block: no matter how many micro-projects, influence is capped
+    });
 }
-
 #[test]
 fn test_financial_barriers_to_reputation_farming() {
-    let env = create_test_env();
-    let (admin, token) = setup_reputation_and_matching(&env);
+    let (env, contract_id) = create_test_env();
+    env.as_contract(&contract_id, || {
+        let (admin, token) = setup_reputation_and_matching(&env, &contract_id);
 
     // Update configuration to increase financial barriers
     let high_threshold = DEFAULT_MIN_FUNDING_THRESHOLD * 10; // 10x higher threshold
@@ -339,12 +343,13 @@ fn test_financial_barriers_to_reputation_farming() {
         "Rich donor should have at least 2x the influence");
 
     // This demonstrates financial barriers prevent reputation farming
+    });
 }
-
 #[test]
 fn test_time_based_barriers() {
-    let env = create_test_env();
-    let (admin, token) = setup_reputation_and_matching(&env);
+    let (env, contract_id) = create_test_env();
+    env.as_contract(&contract_id, || {
+        let (admin, token) = setup_reputation_and_matching(&env, &contract_id);
 
     let quick_farmer = Address::generate(&env);
     
@@ -378,12 +383,13 @@ fn test_time_based_barriers() {
 
     // The system could be enhanced with time-based barriers in future iterations
     // For now, financial barriers provide the main protection
+    });
 }
-
 #[test]
 fn test_incentive_alignment() {
-    let env = create_test_env();
-    let (admin, token) = setup_reputation_and_matching(&env);
+    let (env, contract_id) = create_test_env();
+    env.as_contract(&contract_id, || {
+    let (admin, token) = setup_reputation_and_matching(&env, &contract_id);
 
     // Create three donors representing different incentive scenarios
     let diligent_donor = create_donor_with_reputation(&env, 100 * BASIS_POINTS / 100, 5); // Always does due diligence
@@ -434,4 +440,5 @@ fn test_incentive_alignment() {
     println!("New donor influence: {}x", new_influence as f64 / REPUTATION_SCALE as f64);
     println!("Total project contributions: {}", contributions.total_contributions);
     println!("Total matched: {}", total_matched);
+    });
 }
