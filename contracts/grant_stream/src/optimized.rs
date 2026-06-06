@@ -899,7 +899,6 @@ mod milestone_oracle_tests {
     #[test]
     fn milestone_reaches_consensus_at_two_of_three() {
         let env = Env::default();
-        env.mock_all_auths();
         let contract_id = env.register_contract(None, crate::GrantStreamContract);
         let (_admin, _recipient) = setup_grant(&env, &contract_id);
         with_contract(&env, &contract_id, |env| {
@@ -974,7 +973,6 @@ mod milestone_oracle_tests {
     #[test]
     fn duplicate_oracle_approval_is_rejected() {
         let env = Env::default();
-        env.mock_all_auths();
         let contract_id = env.register_contract(None, crate::GrantStreamContract);
         let (_admin, _recipient) = setup_grant(&env, &contract_id);
         with_contract(&env, &contract_id, |env| {
@@ -1018,7 +1016,6 @@ mod milestone_oracle_tests {
     #[test]
     fn milestone_stays_locked_after_dispute_window() {
         let env = Env::default();
-        env.mock_all_auths();
         let contract_id = env.register_contract(None, crate::GrantStreamContract);
         let (_admin, _recipient) = setup_grant(&env, &contract_id);
         with_contract(&env, &contract_id, |env| {
