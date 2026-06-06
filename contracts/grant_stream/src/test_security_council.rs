@@ -264,55 +264,41 @@ fn test_rogue_dao_attack_blocked() {
 /// Test: Multiple malicious actions blocked simultaneously
 #[test]
 fn test_multiple_attacks_blocked() {
-    let env = Env::default();
-    env.mock_all_auths();
-    let contract_id = env.register_contract(None, crate::GrantStreamContract);
-    env.as_contract(&contract_id, || {
+    // Each action tested in its own env scope to avoid auth frame reuse
+    let scenarios = [
+        (ActionType::Clawback, Some(1)),
+        (ActionType::TreasuryWithdraw, None),
+        (ActionType::AdminChange, None),
+    ];
 
-        let members = create_council_members(&env);
-        SecurityCouncil::initialize_council(env.clone(), members.clone()).unwrap();
+    for (action_type, target) in scenarios {
+        let env = Env::default();
+        env.mock_all_auths();
+        let contract_id = env.register_contract(None, crate::GrantStreamContract);
+        env.as_contract(&contract_id, || {
 
-        let rogue_dao = Address::generate(&env);
-        let params = Vec::new(&env);
+            let members = create_council_members(&env);
+            SecurityCouncil::initialize_council(env.clone(), members.clone()).unwrap();
 
-        // Create multiple malicious actions
-        let action1 = SecurityCouncil::create_pending_action(
-            env.clone(),
-            ActionType::Clawback,
-            Some(1),
-            rogue_dao.clone(),
-            params.clone(),
-        )
-        .unwrap();
+            let rogue_dao = Address::generate(&env);
+            let params = Vec::new(&env);
 
-        let action2 = SecurityCouncil::create_pending_action(
-            env.clone(),
-            ActionType::TreasuryWithdraw,
-            None,
-            rogue_dao.clone(),
-            params.clone(),
-        )
-        .unwrap();
+            let action_id = SecurityCouncil::create_pending_action(
+                env.clone(),
+                action_type,
+                target,
+                rogue_dao,
+                params,
+            ).unwrap();
 
-        let action3 = SecurityCouncil::create_pending_action(
-            env.clone(),
-            ActionType::AdminChange,
-            None,
-            rogue_dao.clone(),
-            params,
-        )
-        .unwrap();
-
-        // Council vetoes all three
-        for action_id in [action1, action2, action3] {
             SecurityCouncil::sign_veto(env.clone(), action_id, members.get(0).unwrap()).unwrap();
             SecurityCouncil::sign_veto(env.clone(), action_id, members.get(1).unwrap()).unwrap();
             SecurityCouncil::sign_veto(env.clone(), action_id, members.get(2).unwrap()).unwrap();
 
             let action = SecurityCouncil::get_pending_action(env.clone(), action_id).unwrap();
             assert_eq!(action.status, ActionStatus::Vetoed);
-        }
-    });
+        });
+    }
 }
 
 /// Test: Council rotation with 7-day timelock
