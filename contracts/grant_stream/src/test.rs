@@ -189,7 +189,7 @@ fn test_get_health_factor_is_read_only_preview() {
     let recipient = Address::generate(&env);
 
     client.create_grant(&grant_id, &recipient, &100_000i128, &1_000i128, &0u64, &None, &None);
-    let contract_id = client.address;
+    let contract_id = client.address.clone();
     env.as_contract(&contract_id, || {
         env.storage().instance().set(&super::storage_keys::StorageKey::ReserveBalance, &100_000i128);
     });
