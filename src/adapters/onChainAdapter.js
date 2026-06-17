@@ -38,6 +38,38 @@ const onChainAdapter = {
     });
     return result;
   },
+
+  async fundEscrow(escrowId, amount) {
+    if (!CONTRACT_ID) throw new Error("GRANT_STREAM_CONTRACT_ID not set");
+    const result = await getServer().simulateInvoke({
+      contract: getContract().address(),
+      method: "fund_escrow",
+      args: [xdr.ScVal.scvSymbol(escrowId), xdr.ScVal.scvString(amount)],
+    });
+    return result;
+  },
+
+  async releaseEscrow(escrowId) {
+    if (!CONTRACT_ID) throw new Error("GRANT_STREAM_CONTRACT_ID not set");
+    const result = await getServer().simulateInvoke({
+      contract: getContract().address(),
+      method: "release_escrow",
+      args: [xdr.ScVal.scvSymbol(escrowId)],
+    });
+    return result;
+  },
+
+  async withdrawFromEscrow(escrowId, amount) {
+    if (!CONTRACT_ID) throw new Error("GRANT_STREAM_CONTRACT_ID not set");
+    const args = [xdr.ScVal.scvSymbol(escrowId)];
+    if (amount) args.push(xdr.ScVal.scvString(amount));
+    const result = await getServer().simulateInvoke({
+      contract: getContract().address(),
+      method: "withdraw_escrow",
+      args,
+    });
+    return result;
+  },
 };
 
 module.exports = { onChainAdapter };
