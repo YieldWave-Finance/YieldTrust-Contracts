@@ -227,6 +227,7 @@ pub enum GrantStreamError {
     ProposalNotPending = 41,
     InsufficientApprovals = 42,
     NotSanityOracle = 43,
+    Reentrant = 100,
 }
 
 pub type Error = GrantStreamError;
@@ -980,6 +981,7 @@ impl GrantStreamContract {
     }
 
     pub fn confidential_claim(
+        nonreentrant!(env, {
         env: Env,
         grant_id: u64,
         claim_amount: i128,
@@ -1019,9 +1021,10 @@ impl GrantStreamContract {
         env.events()
             .publish((symbol_short!("cnfclaim"),), (nullifier, masked_amount));
         Ok(())
-    }
+        })
 
     pub fn withdraw(env: Env, grant_id: u64, amount: i128) -> Result<(), Error> {
+        nonreentrant!(env, {
         let mut grant = read_grant(&env, grant_id)?;
         grant.recipient.require_auth();
 
@@ -1117,7 +1120,7 @@ impl GrantStreamContract {
         audit_log::update_audit_leaf(&env, grant_id, grant.withdrawn);
 
         Ok(())
-    }
+        })
 
     pub fn pause_stream(env: Env, grant_id: u64, reason: Option<String>) -> Result<(), Error> {
         require_admin_auth(&env)?;
@@ -1243,6 +1246,7 @@ impl GrantStreamContract {
     }
 
     pub fn rage_quit(env: Env, grant_id: u64) -> Result<(), Error> {
+        nonreentrant!(env, {
         let mut grant = read_grant(&env, grant_id)?;
         grant.recipient.require_auth();
 
@@ -1281,9 +1285,10 @@ impl GrantStreamContract {
         }
 
         Ok(())
-    }
+        })
 
     pub fn cancel_grant(env: Env, grant_id: u64) -> Result<(), Error> {
+        nonreentrant!(env, {
         let mut grant = read_grant(&env, grant_id)?;
         require_admin_auth(&env)?;
 
@@ -1323,7 +1328,7 @@ impl GrantStreamContract {
         }
 
         Ok(())
-    }
+        })
 
     /// Change the grantee (recipient) of an active grant.
     /// This enables team migrations and grant transfers with proper authorization.
@@ -1382,6 +1387,7 @@ impl GrantStreamContract {
     /// Restricted to the original donor or DAO multi-sig.
     /// Calculates unearned balance and instantly terminates the stream.
     pub fn trigger_grant_clawback(
+        nonreentrant!(env, {
         env: Env,
         grant_id: u64,
         reason: String,
@@ -1470,10 +1476,11 @@ impl GrantStreamContract {
         write_grant(&env, grant_id, &grant);
         
         Ok(())
-    }
+        })
 
     /// Resolve a disputed clawback by releasing escrowed funds to the appropriate party
     pub fn resolve_disputed_clawback(
+        nonreentrant!(env, {
         env: Env,
         grant_id: u64,
         release_to_donor: bool, // true = release to donor, false = return to grant
@@ -1527,7 +1534,7 @@ impl GrantStreamContract {
         );
         
         Ok(())
-    }
+        })
 
     /// Get the current dispute escrow balance for a grant
     pub fn get_dispute_escrow_balance(env: Env, grant_id: u64) -> Result<i128, Error> {
@@ -2609,3 +2616,4 @@ mod test_security_invariants;
 mod is_active_grantee_benchmark;
 #[cfg(test)]
 mod test_sep38_claim_value;
+
