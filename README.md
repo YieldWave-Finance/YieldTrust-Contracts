@@ -22,6 +22,17 @@ This is a Cargo workspace. Each directory under `contracts/` is an independent d
 
 All packages share a single `soroban-sdk` version declared in the root `Cargo.toml` under `[workspace.dependencies]`. Individual crates reference it via `soroban-sdk = { workspace = true }`. To upgrade the SDK across the entire workspace, change the version in the root `Cargo.toml` only, then run `cargo update && cargo test --workspace`.
 
+### Off-chain backend (`src/`)
+
+The `src/` directory contains the Node.js off-chain service that bridges the Soroban contracts with external consumers. It is **not** a Rust/Cargo package and is not part of the workspace. Key directories:
+
+| Directory        | Purpose                                                          |
+| ---------------- | ---------------------------------------------------------------- |
+| `src/adapters/`  | On-chain adapter — translates raw Soroban XDR responses to JS.  |
+| `src/routes/`    | Express route handlers (escrow read/write, etc.).               |
+| `src/services/`  | Business-logic layer (escrowRead, escrowWrite, …).              |
+| `src/middleware/`| Shared Express middleware (auth, validation, error handling).    |
+
 ## 🛠️ Tech Stack
 
 - **Language/Framework:** Rust / Soroban WASM, Solidity / Foundry

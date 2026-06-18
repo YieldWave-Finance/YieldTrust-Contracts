@@ -15,6 +15,40 @@
 // • The guard is zero-cost when the protected function completes normally:
 //   `exit()` deletes the temporary entry rather than writing `false`, saving
 //   one ledger write.
+//
+// Protected entrypoints
+// ─────────────────────
+// All public entrypoints that perform cross-contract token transfers or invoke
+// external contract callbacks must be wrapped with `nonreentrant!(env, { … })`.
+// The shared `GuardKey::NonReentrant` lock means re-entry via *any* guarded
+// function is blocked, not just same-function re-entry.
+//
+// Currently guarded (see lib.rs):
+//   claim_milestone_funds        – token transfer to recipient after milestone
+//   emergency_governance_withdraw – governance-approved token rescue
+//   withdraw                     – primary fund withdrawal + on_withdraw callback
+//   rage_quit                    – multi-transfer on abrupt exit
+//   cancel_grant                 – treasury transfer of remaining balance
+//   trigger_grant_clawback       – conditional transfer to donor or escrow
+//   resolve_disputed_clawback    – escrow release to donor or treasury
+//   rescue_tokens                – admin emergency token recovery
+//   withdraw_validator           – validator fee withdrawal
+//   submit_milestone_proof       – inbound XLM deposit from recipient
+//   approve_milestone_submission – deposit refund to recipient
+//   slash_ms_submission_deposit  – deposit forfeiture to treasury
+//   finalize_and_purge           – cleanup bounty transfer
+//   execute_rescue               – multi-sig approved token rescue
+//   prune_finalized_grant        – relayer bounty transfer
+//
+// Adding a new guarded function
+// ──────────────────────────────
+// 1. Wrap the entire function body: `nonreentrant!(env, { … })`.
+// 2. Do NOT add the guard to internal helpers called from a guarded function —
+//    the shared lock would cause an immediate reentrant panic (double-lock).
+//    Example: `execute_protected_clawback` calls `cancel_grant` directly;
+//    only `cancel_grant` carries the guard.
+// 3. Add a test that calls `reentrancy_enter` twice and asserts the second
+//    call panics (see `test_reentrancy_guard_blocks_reentry` in test.rs).
 // ============================================================================
 
 use soroban_sdk::{contracttype, panic_with_error, Env, xdr::{ScErrorCode, ScErrorType}};

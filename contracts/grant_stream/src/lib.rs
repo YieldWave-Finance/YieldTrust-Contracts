@@ -1022,6 +1022,7 @@ impl GrantStreamContract {
     }
 
     pub fn withdraw(env: Env, grant_id: u64, amount: i128) -> Result<(), Error> {
+        nonreentrant!(env, {
         let mut grant = read_grant(&env, grant_id)?;
         grant.recipient.require_auth();
 
@@ -1117,6 +1118,7 @@ impl GrantStreamContract {
         audit_log::update_audit_leaf(&env, grant_id, grant.withdrawn);
 
         Ok(())
+        })
     }
 
     pub fn pause_stream(env: Env, grant_id: u64, reason: Option<String>) -> Result<(), Error> {
@@ -1243,6 +1245,7 @@ impl GrantStreamContract {
     }
 
     pub fn rage_quit(env: Env, grant_id: u64) -> Result<(), Error> {
+        nonreentrant!(env, {
         let mut grant = read_grant(&env, grant_id)?;
         grant.recipient.require_auth();
 
@@ -1281,9 +1284,11 @@ impl GrantStreamContract {
         }
 
         Ok(())
+        })
     }
 
     pub fn cancel_grant(env: Env, grant_id: u64) -> Result<(), Error> {
+        nonreentrant!(env, {
         let mut grant = read_grant(&env, grant_id)?;
         require_admin_auth(&env)?;
 
@@ -1323,6 +1328,7 @@ impl GrantStreamContract {
         }
 
         Ok(())
+        })
     }
 
     /// Change the grantee (recipient) of an active grant.
@@ -1387,6 +1393,7 @@ impl GrantStreamContract {
         reason: String,
         contested: bool,
     ) -> Result<(), Error> {
+        nonreentrant!(env, {
         let mut grant = read_grant(&env, grant_id)?;
         
         // Check if clawback has already been executed
@@ -1468,8 +1475,9 @@ impl GrantStreamContract {
         // Mark grant as clawbacked
         grant.status = GrantStatus::Clawbacked;
         write_grant(&env, grant_id, &grant);
-        
+
         Ok(())
+        })
     }
 
     /// Resolve a disputed clawback by releasing escrowed funds to the appropriate party
@@ -1478,8 +1486,9 @@ impl GrantStreamContract {
         grant_id: u64,
         release_to_donor: bool, // true = release to donor, false = return to grant
     ) -> Result<(), Error> {
+        nonreentrant!(env, {
         require_admin_auth(&env)?;
-        
+
         let grant = read_grant(&env, grant_id)?;
         if grant.status != GrantStatus::Clawbacked {
             return Err(Error::InvalidState);
@@ -1525,8 +1534,9 @@ impl GrantStreamContract {
             (symbol_short!("claw_rslv"), grant_id, admin),
             (escrow_amount, release_to_donor),
         );
-        
+
         Ok(())
+        })
     }
 
     /// Get the current dispute escrow balance for a grant
@@ -1535,6 +1545,7 @@ impl GrantStreamContract {
     }
 
     pub fn rescue_tokens(env: Env, token_address: Address, amount: i128, to: Address) -> Result<(), Error> {
+        nonreentrant!(env, {
         require_admin_auth(&env)?;
         if amount <= 0 { return Err(Error::InvalidAmount); }
 
@@ -1553,6 +1564,7 @@ impl GrantStreamContract {
 
         client.transfer(&env.current_contract_address(), &to, &amount);
         Ok(())
+        })
     }
 
     // ── Circuit Breaker: Oracle Price Deviation Guard (Issue #312) ────────────
@@ -1878,6 +1890,7 @@ impl GrantStreamContract {
     }
 
     pub fn withdraw_validator(env: Env, grant_id: u64, amount: i128) -> Result<(), Error> {
+        nonreentrant!(env, {
         let mut grant = read_grant(&env, grant_id)?;
         let validator_addr = grant.validator.clone().ok_or(Error::InvalidState)?;
         validator_addr.require_auth();
@@ -1907,6 +1920,7 @@ impl GrantStreamContract {
             amount,
         );
         Ok(())
+        })
     }
 
     pub fn set_legal_metadata(
@@ -1963,6 +1977,7 @@ impl GrantStreamContract {
         proof: Symbol,
         nonce: u64,
     ) -> Result<(), Error> {
+        nonreentrant!(env, {
         let grant = read_grant(&env, grant_id)?;
         grant.recipient.require_auth();
 
@@ -2008,6 +2023,7 @@ impl GrantStreamContract {
         );
 
         Ok(())
+        })
     }
 
     /// Admin-only: approve a milestone submission and refund its anti-spam deposit.
@@ -2016,6 +2032,7 @@ impl GrantStreamContract {
         grant_id: u64,
         milestone_index: u32,
     ) -> Result<(), Error> {
+        nonreentrant!(env, {
         require_admin_auth(&env)?;
         let grant = read_grant(&env, grant_id)?;
         let deposit = get_milestone_submission_deposit(&env, grant_id, milestone_index)
@@ -2031,6 +2048,7 @@ impl GrantStreamContract {
             (grant_id, milestone_index, deposit),
         );
         Ok(())
+        })
     }
 
     /// Admin-only: slash a fraudulent milestone submission deposit to treasury.
@@ -2039,6 +2057,7 @@ impl GrantStreamContract {
         grant_id: u64,
         milestone_index: u32,
     ) -> Result<(), Error> {
+        nonreentrant!(env, {
         require_admin_auth(&env)?;
         let deposit = get_milestone_submission_deposit(&env, grant_id, milestone_index)
             .ok_or(Error::SubmissionDepositNotFound)?;
@@ -2054,6 +2073,7 @@ impl GrantStreamContract {
             (grant_id, milestone_index, deposit),
         );
         Ok(())
+        })
     }
 
     pub fn emit_grant_status(env: Env, grant_id: u64) -> Result<soroban_sdk::Bytes, Error> {
@@ -2082,6 +2102,7 @@ impl GrantStreamContract {
     /// Finalizes and purges a completed or cancelled grant to clean up state.
     /// Rewards the purger with a small bounty from the treasury/contract.
     pub fn finalize_and_purge(env: Env, grant_id: u64, purger: Address) -> Result<(), Error> {
+        nonreentrant!(env, {
         purger.require_auth();
 
         let mut grant = read_grant(&env, grant_id)?;
@@ -2151,6 +2172,7 @@ impl GrantStreamContract {
         );
 
         Ok(())
+        })
     }
 
     // ── Issue #324: Public-Dashboard Heartbeat ────────────────────────────────
@@ -2237,11 +2259,13 @@ impl GrantStreamContract {
         proposal_id: u64,
         token_address: Address,
     ) -> Result<(), Error> {
+        nonreentrant!(env, {
         let (rescue_to, amount) =
             multi_threshold::execute_rescue(&env, caller, proposal_id)?;
         let client = token::Client::new(&env, &token_address);
         client.transfer(&env.current_contract_address(), &rescue_to, &amount);
         Ok(())
+        })
     }
 
     /// Cancel a pending rescue proposal.  Only the original proposer may cancel.
@@ -2261,6 +2285,7 @@ impl GrantStreamContract {
     /// Leaves a lightweight cryptographic tombstone (hash) for audit integrity.
     /// Incentivizes relayers with a gas bounty from reclaimed rent.
     pub fn prune_finalized_grant(env: Env, grant_id: u64, relayer: Address) -> Result<(), Error> {
+        nonreentrant!(env, {
         relayer.require_auth();
 
         let mut grant = read_grant(&env, grant_id)?;
@@ -2363,6 +2388,7 @@ impl GrantStreamContract {
         );
 
         Ok(())
+        })
     }
 
     /// Check if a user is an active grantee (has Active or Paused grants).
