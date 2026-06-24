@@ -32,7 +32,16 @@ use soroban_sdk::{
 // Shared helpers
 // ---------------------------------------------------------------------------
 
-fn setup(env: &Env) -> (Address, Address, Address, Address, Address, GrantStreamContractClient) {
+fn setup(
+    env: &Env,
+) -> (
+    Address,
+    Address,
+    Address,
+    Address,
+    Address,
+    GrantStreamContractClient,
+) {
     let admin = Address::generate(env);
     let grant_token = env.register_stellar_asset_contract_v2(admin.clone());
     let native_token = env.register_stellar_asset_contract_v2(admin.clone());
@@ -48,14 +57,27 @@ fn setup(env: &Env) -> (Address, Address, Address, Address, Address, GrantStream
         &oracle,
         &native_token.address(),
     );
-    (admin, grant_token.address(), treasury, oracle, native_token.address(), client)
+    (
+        admin,
+        grant_token.address(),
+        treasury,
+        oracle,
+        native_token.address(),
+        client,
+    )
 }
 
 fn set_ts(env: &Env, ts: u64) {
     env.ledger().with_mut(|l| l.timestamp = ts);
 }
 
-fn mint_to_contract(env: &Env, token_addr: &Address, admin: &Address, contract: &Address, amount: i128) {
+fn mint_to_contract(
+    env: &Env,
+    token_addr: &Address,
+    admin: &Address,
+    contract: &Address,
+    amount: i128,
+) {
     let admin_client = token::StellarAssetClient::new(env, token_addr);
     admin_client.mint(contract, &amount);
 }
@@ -185,10 +207,17 @@ fn test_invariant_non_negative_balances_after_withdraw() {
         // Invariant: all counters >= 0
         assert!(g.withdrawn >= 0, "withdrawn must be non-negative");
         assert!(g.claimable >= 0, "claimable must be non-negative");
-        assert!(g.validator_withdrawn >= 0, "validator_withdrawn must be non-negative");
-        assert!(g.validator_claimable >= 0, "validator_claimable must be non-negative");
+        assert!(
+            g.validator_withdrawn >= 0,
+            "validator_withdrawn must be non-negative"
+        );
+        assert!(
+            g.validator_claimable >= 0,
+            "validator_claimable must be non-negative"
+        );
         // Invariant: sum <= total_amount
-        let accounted = g.withdrawn + g.claimable + g.validator_withdrawn + g.validator_claimable;
+        let accounted =
+            g.withdrawn + g.claimable + g.validator_withdrawn + g.validator_claimable;
         assert!(
             accounted <= g.total_amount,
             "accounted ({accounted}) must not exceed total_amount ({})",
@@ -238,7 +267,8 @@ fn test_invariant_non_negative_balances_with_validator() {
         assert!(g.claimable >= 0);
         assert!(g.validator_withdrawn >= 0);
         assert!(g.validator_claimable >= 0);
-        let accounted = g.withdrawn + g.claimable + g.validator_withdrawn + g.validator_claimable;
+        let accounted =
+            g.withdrawn + g.claimable + g.validator_withdrawn + g.validator_claimable;
         assert!(accounted <= g.total_amount);
     }
 }
@@ -297,7 +327,10 @@ fn test_invariant_withdraw_non_positive_rejected() {
     assert!(result_zero.is_err(), "zero withdraw amount must be rejected");
 
     let result_negative = client.try_withdraw(&grant_id, &(-1_i128));
-    assert!(result_negative.is_err(), "negative withdraw amount must be rejected");
+    assert!(
+        result_negative.is_err(),
+        "negative withdraw amount must be rejected"
+    );
 
     let g = client.get_grant(&grant_id);
     assert_eq!(g.withdrawn, 0);
@@ -454,8 +487,21 @@ fn test_invariant_single_admin_no_reinitialize() {
     // create a grant without error.
     let recipient = Address::generate(&env);
     let grant_token_addr = grant_token.address();
-    mint_to_contract(&env, &grant_token_addr, &admin1, &client.address, 1_000 * SCALING_FACTOR);
-    client.create_grant(&1_u64, &recipient, &(1_000 * SCALING_FACTOR), &SCALING_FACTOR, &0, &None);
+    mint_to_contract(
+        &env,
+        &grant_token_addr,
+        &admin1,
+        &client.address,
+        1_000 * SCALING_FACTOR,
+    );
+    client.create_grant(
+        &1_u64,
+        &recipient,
+        &(1_000 * SCALING_FACTOR),
+        &SCALING_FACTOR,
+        &0,
+        &None,
+    );
     // If we reach here the admin is still admin1 (mock_all_auths passes admin1's auth).
 }
 

@@ -1,11 +1,11 @@
 #![cfg(test)]
 
 use super::{GrantStreamContract, GrantStreamContractClient, GrantStatus, SCALING_FACTOR};
+use proptest::prelude::*;
 use soroban_sdk::{
     testutils::{Address as _, Ledger},
-    token, Address, Env, Vec, Symbol,
+    token, Address, Env, Symbol, Vec,
 };
-use proptest::prelude::*;
 use std::collections::HashMap;
 
 // Constants for temporal fuzz testing
@@ -47,7 +47,7 @@ impl TemporalTestState {
     fn new() -> Self {
         let env = Env::default();
         env.mock_all_auths();
-        
+
         let admin = Address::generate(&env);
         let grant_token_addr = env.register_stellar_asset_contract_v2(admin.clone());
         let native_token_addr = env.register_stellar_asset_contract_v2(admin.clone());
@@ -57,7 +57,13 @@ impl TemporalTestState {
         let contract_id = env.register(GrantStreamContract, ());
         let client = GrantStreamContractClient::new(&env, &contract_id);
 
-        client.initialize(&admin, &grant_token_addr.address(), &treasury, &oracle, &native_token_addr.address());
+        client.initialize(
+            &admin,
+            &grant_token_addr.address(),
+            &treasury,
+            &oracle,
+            &native_token_addr.address(),
+        );
 
         Self {
             env,
@@ -76,7 +82,10 @@ impl TemporalTestState {
         }
     }
 
-    fn setup_grants(&mut self, configs: &[TemporalGrantConfig]) -> Result<(), Box<dyn std::error::Error>> {
+    fn setup_grants(
+        &mut self,
+        configs: &[TemporalGrantConfig],
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let grant_token = token::Client::new(&self.env, &self.grant_token);
         let grant_token_admin = token::StellarAssetClient::new(&self.env, &self.grant_token);
 
@@ -89,14 +98,14 @@ impl TemporalTestState {
         for config in configs {
             let recipient = Address::generate(&self.env);
             self.recipients.push_back(recipient);
-            
+
             let validator = if config.has_validator {
                 Some(Address::generate(&self.env))
             } else {
                 None
             };
             self.validators.push_back(validator);
-            
+
             total_needed += config.total_amount;
         }
 
@@ -108,7 +117,7 @@ impl TemporalTestState {
         // Create grants
         for (i, config) in configs.iter().enumerate() {
             let grant_id = (i + 1) as u64;
-            
+
             self.client.create_grant(
                 &grant_id,
                 &self.recipients.get(i).unwrap(),
@@ -117,7 +126,7 @@ impl TemporalTestState {
                 &config.warmup_duration,
                 &self.validators.get(i).unwrap(),
             );
-            
+
             self.grant_ids.push_back(grant_id);
             self.grant_configs.push_back(config.clone());
         }
@@ -161,7 +170,8 @@ impl TemporalTestState {
             let config = &self.grant_configs.get(i).unwrap();
 
             // Verify basic invariants
-            let total_accounted = grant.withdrawn
+            let total_accounted = grant
+                .withdrawn
                 .checked_add(grant.claimable)
                 .ok_or("Math overflow in grantee accounting")?
                 .checked_add(grant.validator_withdrawn)
@@ -187,8 +197,11 @@ impl TemporalTestState {
             // Verify temporal boundaries
             if current_time < config.start_time {
                 // Before start time, no tokens should have been accrued
-                if grant.withdrawn > 0 || grant.claimable > 0 || 
-                   grant.validator_withdrawn > 0 || grant.validator_claimable > 0 {
+                if grant.withdrawn > 0
+                    || grant.claimable > 0
+                    || grant.validator_withdrawn > 0
+                    || grant.validator_claimable > 0
+                {
                     return Err(format!(
                         "Grant {}: has activity before start_time {} (current: {})",
                         grant_id, config.start_time, current_time
@@ -197,10 +210,13 @@ impl TemporalTestState {
             }
 
             // Verify that the flow calculation doesn't create extra tokens
-            let expected_max_flow = self.calculate_expected_max_flow(config, current_time);
-            let actual_total_flow = grant.withdrawn + grant.claimable + 
-                                  grant.validator_withdrawn + grant.validator_claimable;
-            
+            let expected_max_flow =
+                self.calculate_expected_max_flow(config, current_time);
+            let actual_total_flow = grant.withdrawn
+                + grant.claimable
+                + grant.validator_withdrawn
+                + grant.validator_claimable;
+
             if actual_total_flow > expected_max_flow {
                 return Err(format!(
                     "Grant {}: actual flow {} exceeds expected max {} at time {}",
@@ -217,7 +233,7 @@ impl TemporalTestState {
         // Verify global invariant: total tokens never exceed initial allocation
         let contract_balance = self.get_contract_balance();
         let mut total_user_balances = 0i128;
-        
+
         for i in 0..self.recipients.len() {
             total_user_balances += self.get_recipient_balance(i);
             total_user_balances += self.get_validator_balance(i);
@@ -234,15 +250,22 @@ impl TemporalTestState {
         Ok(())
     }
 
-    fn calculate_expected_max_flow(&self, config: &TemporalGrantConfig, current_time: u64) -> i128 {
+    fn calculate_expected_max_flow(
+        &self,
+        config: &TemporalGrantConfig,
+        current_time: u64,
+    ) -> i128 {
         if current_time <= config.start_time {
             return 0;
         }
 
         let elapsed = current_time - config.start_time;
-        
+
         // Calculate base flow
-        let base_flow = config.flow_rate.checked_mul(elapsed as i128).unwrap_or(i128::MAX);
+        let base_flow = config
+            .flow_rate
+            .checked_mul(elapsed as i128)
+            .unwrap_or(i128::MAX);
 
         // Apply warmup multiplier
         let warmup_multiplier = if config.warmup_duration == 0 {
@@ -255,34 +278,56 @@ impl TemporalTestState {
                 2500 // 25%
             } else {
                 let elapsed_warmup = current_time - config.start_time;
-                let progress = (elapsed_warmup as i128 * 10000) / (config.warmup_duration as i128);
+                let progress =
+                    (elapsed_warmup as i128 * 10000) / (config.warmup_duration as i128);
                 2500 + (7500 * progress) / 10000
             }
         };
 
-        let adjusted_flow = base_flow.checked_mul(warmup_multiplier).unwrap_or(i128::MAX) / 10000;
+        let adjusted_flow = base_flow
+            .checked_mul(warmup_multiplier)
+            .unwrap_or(i128::MAX)
+            / 10000;
 
         // Cap at total amount
         adjusted_flow.min(config.total_amount)
     }
 
-    fn simulate_time_jump_with_withdrawals(&mut self, time_jump: u64, withdraw_probability: f64) -> Result<(), String> {
+    fn simulate_time_jump_with_withdrawals(
+        &mut self,
+        time_jump: u64,
+        withdraw_probability: f64,
+    ) -> Result<(), String> {
         let current_time = self.env.ledger().timestamp();
         let new_time = current_time + time_jump;
         self.set_timestamp(new_time);
 
         // Randomly perform withdrawals after time jump
         for (i, grant_id) in self.grant_ids.iter().enumerate() {
-            if proptest::sample::Index::new(proptest::rng::Rng::new_from_seed(&[0; 32]), 1).sample(&mut proptest::rng::Rng::new_from_seed(&[0; 32])).unwrap() < (withdraw_probability * 100.0) as usize {
+            if proptest::sample::Index::new(
+                proptest::rng::Rng::new_from_seed(&[0; 32]),
+                1,
+            )
+            .sample(&mut proptest::rng::Rng::new_from_seed(&[0; 32]))
+            .unwrap()
+                < (withdraw_probability * 100.0) as usize
+            {
                 let claimable = self.client.claimable(*grant_id);
                 if claimable > 0 {
                     // Withdraw a random amount up to claimable
                     let withdraw_amount = if claimable > 1 {
-                        (proptest::sample::Index::new(proptest::rng::Rng::new_from_seed(&[0; 32]), claimable as usize).sample(&mut proptest::rng::Rng::new_from_seed(&[0; 32])).unwrap() as i128 + 1).min(claimable)
+                        (proptest::sample::Index::new(
+                            proptest::rng::Rng::new_from_seed(&[0; 32]),
+                            claimable as usize,
+                        )
+                        .sample(&mut proptest::rng::Rng::new_from_seed(&[0; 32]))
+                        .unwrap() as i128
+                            + 1)
+                        .min(claimable)
                     } else {
                         claimable
                     };
-                    
+
                     self.client.withdraw(grant_id, &withdraw_amount);
                 }
             }
@@ -292,11 +337,18 @@ impl TemporalTestState {
                 let validator_claimable = self.client.validator_claimable(*grant_id);
                 if validator_claimable > 0 {
                     let withdraw_amount = if validator_claimable > 1 {
-                        (proptest::sample::Index::new(proptest::rng::Rng::new_from_seed(&[0; 32]), validator_claimable as usize).sample(&mut proptest::rng::Rng::new_from_seed(&[0; 32])).unwrap() as i128 + 1).min(validator_claimable)
+                        (proptest::sample::Index::new(
+                            proptest::rng::Rng::new_from_seed(&[0; 32]),
+                            validator_claimable as usize,
+                        )
+                        .sample(&mut proptest::rng::Rng::new_from_seed(&[0; 32]))
+                        .unwrap() as i128
+                            + 1)
+                        .min(validator_claimable)
                     } else {
                         validator_claimable
                     };
-                    
+
                     self.client.withdraw_validator(grant_id, &withdraw_amount);
                 }
             }
@@ -355,7 +407,7 @@ fn generate_grant_configs() -> Vec<TemporalGrantConfig> {
 // Main temporal invariant fuzz test
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(100))]
-    
+
     #[test]
     fn test_temporal_invariant_random_time_jumps(
         // Random time jumps from 1 second to 10 years
@@ -371,39 +423,39 @@ proptest! {
         include_validators in prop::bool::ANY
     ) {
         let mut configs = generate_grant_configs();
-        
+
         // Filter configs based on test parameters
         configs.retain(|c| {
-            (!include_warmup || c.warmup_duration == 0) && 
+            (!include_warmup || c.warmup_duration == 0) &&
             (!include_validators || !c.has_validator)
         });
-        
+
         if configs.is_empty() {
             return; // Skip test if no configs match
         }
-        
+
         let mut state = TemporalTestState::new();
         state.setup_grants(&configs).expect("Failed to setup grants");
-        
+
         let mut current_time = 1000;
-        
+
         // Apply time jumps sequentially
         for (i, time_jump) in time_jumps.iter().enumerate() {
             // Limit total test duration to prevent excessive execution
             if current_time + time_jump > 1000 + MAX_TEST_DURATION {
                 break;
             }
-            
+
             state.simulate_time_jump_with_withdrawals(*time_jump, withdraw_probability)
                 .unwrap_or_else(|e| panic!("Time jump simulation failed at step {}: {}", i, e));
-            
+
             current_time += time_jump;
-            
+
             // Verify temporal invariants after each time jump
             state.verify_temporal_invariant(current_time)
                 .unwrap_or_else(|e| panic!("Temporal invariant violation at time {}: {}", current_time, e));
         }
-        
+
         // Final verification at end of test
         state.verify_temporal_invariant(current_time)
             .unwrap_or_else(|e| panic!("Final temporal invariant violation: {}", e));
@@ -413,7 +465,7 @@ proptest! {
 // Boundary testing for stream Start and End
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(50))]
-    
+
     #[test]
     fn test_stream_start_end_boundaries(
         // Test times around stream boundaries
@@ -432,10 +484,10 @@ proptest! {
             warmup_duration: 0,
             has_validator: false,
         };
-        
+
         let mut state = TemporalTestState::new();
         state.setup_grants(&[config.clone()]).expect("Failed to setup grant");
-        
+
         let test_time = if test_start_boundary {
             // Test around start time
             (config.start_time as i64 + boundary_offset).max(0) as u64
@@ -444,22 +496,22 @@ proptest! {
             let end_time = config.start_time + duration_days * SECONDS_PER_DAY;
             (end_time as i64 + boundary_offset).max(0) as u64
         };
-        
+
         state.set_timestamp(test_time);
-        
+
         // Verify boundary conditions
         state.verify_temporal_invariant(test_time)
             .unwrap_or_else(|e| panic!("Boundary invariant violation at time {}: {}", test_time, e));
-        
+
         // Additional boundary-specific checks
         let grant = state.client.get_grant(1);
-        
+
         if test_time <= config.start_time {
             // Before or at start: no withdrawals should be possible
             assert!(grant.withdrawn == 0, "Withdrawal before start time");
             assert!(grant.claimable == 0, "Claimable before start time");
         }
-        
+
         if test_start_boundary && test_time == config.start_time {
             // Exactly at start time
             let claimable = state.client.claimable(1);
@@ -479,34 +531,39 @@ fn test_maximum_duration_temporal_invariant() {
         warmup_duration: 0,
         has_validator: true,
     };
-    
+
     let mut state = TemporalTestState::new();
-    state.setup_grants(&[config.clone()]).expect("Failed to setup grant");
-    
+    state
+        .setup_grants(&[config.clone()])
+        .expect("Failed to setup grant");
+
     // Test at maximum duration
     let max_time = config.start_time + 10 * SECONDS_PER_YEAR;
     state.set_timestamp(max_time);
-    
+
     // Perform full withdrawal
     let claimable = state.client.claimable(1);
     if claimable > 0 {
         state.client.withdraw(&1, &claimable);
     }
-    
+
     let validator_claimable = state.client.validator_claimable(1);
     if validator_claimable > 0 {
         state.client.withdraw_validator(&1, &validator_claimable);
     }
-    
+
     // Verify invariants
-    state.verify_temporal_invariant(max_time)
+    state
+        .verify_temporal_invariant(max_time)
         .expect("Maximum duration temporal invariant violation");
-    
+
     // Verify that total doesn't exceed allocation
     let grant = state.client.get_grant(1);
     let total_accounted = grant.withdrawn + grant.validator_withdrawn;
-    assert!(total_accounted <= config.total_amount, 
-        "Total exceeded allocation at maximum duration");
+    assert!(
+        total_accounted <= config.total_amount,
+        "Total exceeded allocation at maximum duration"
+    );
 }
 
 // Test for mathematical precision over long time periods
@@ -519,27 +576,32 @@ fn test_long_term_mathematical_precision() {
         warmup_duration: 30 * SECONDS_PER_DAY, // 30 day warmup
         has_validator: true,
     };
-    
+
     let mut state = TemporalTestState::new();
-    state.setup_grants(&[config.clone()]).expect("Failed to setup grant");
-    
+    state
+        .setup_grants(&[config.clone()])
+        .expect("Failed to setup grant");
+
     // Test various time points to check for precision loss
     let test_points = vec![
         config.start_time,
-        config.start_time + 1, // 1 second after start
-        config.start_time + SECONDS_PER_DAY, // 1 day
-        config.start_time + 30 * SECONDS_PER_DAY, // End of warmup
-        config.start_time + 365 * SECONDS_PER_DAY, // 1 year
+        config.start_time + 1,                        // 1 second after start
+        config.start_time + SECONDS_PER_DAY,          // 1 day
+        config.start_time + 30 * SECONDS_PER_DAY,     // End of warmup
+        config.start_time + 365 * SECONDS_PER_DAY,    // 1 year
         config.start_time + 5 * 365 * SECONDS_PER_DAY, // 5 years
     ];
-    
+
     for test_time in test_points {
         state.set_timestamp(test_time);
-        
+
         // Verify mathematical consistency
-        state.verify_temporal_invariant(test_time)
-            .unwrap_or_else(|e| panic!("Mathematical precision violation at time {}: {}", test_time, e));
-        
+        state
+            .verify_temporal_invariant(test_time)
+            .unwrap_or_else(|e| {
+                panic!("Mathematical precision violation at time {}: {}", test_time, e)
+            });
+
         // Check for overflow conditions
         let grant = state.client.get_grant(1);
         assert!(grant.withdrawn >= 0, "Negative withdrawn amount");
