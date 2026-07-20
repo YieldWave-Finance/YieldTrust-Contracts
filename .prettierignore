@@ -1,0 +1,50 @@
+# Rust
+/target/
+Cargo.lock
+**/*.rs.bk
+
+# JavaScript / Node
+node_modules/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+*.backup
+
+# Build artifacts
+artifacts/
+cache/
+*.wasm
+
+# Binary installers
+*.exe
+
+# Environment
+.env
+
+# Git
+.git/
+.gitignore
+.gitmodules
+
+# Prettier itself (already configured)
+.prettierrc
+.prettierignore
+
+# Documentation
+docs/*.json

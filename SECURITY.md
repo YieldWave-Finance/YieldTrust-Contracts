@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document provides comprehensive security information for the Grant Stream Contracts protocol. It serves as the primary security reference for auditors, developers, and governance participants.
+This document provides comprehensive security information for the Grant Stream
+Contracts protocol. It serves as the primary security reference for auditors,
+developers, and governance participants.
 
 ## Table of Contents
 
@@ -22,8 +24,10 @@ This document provides comprehensive security information for the Grant Stream C
 
 The Grant Stream protocol implements multiple security layers:
 
-- **Access Control**: Role-based permissions with admin, oracle, and recipient roles
-- **Double-Approval System**: Dual authorization for high-value milestone payouts
+- **Access Control**: Role-based permissions with admin, oracle, and recipient
+  roles
+- **Double-Approval System**: Dual authorization for high-value milestone
+  payouts
 - **Reentrancy Protection**: Manual guards preventing recursive calls
 - **Circuit Breakers**: Oracle price deviation and TVL velocity limits
 - **Legal Compliance**: On-chain legal document signatures
@@ -58,46 +62,46 @@ The Grant Stream protocol implements multiple security layers:
 
 ### Admin Functions (High Risk)
 
-| Function | File | Security Requirements | Audit References |
-|----------|------|---------------------|------------------|
-| `initialize` | `lib.rs:451` | Multi-sig required, immutable after set | [AUDIT-001] |
-| `create_grant` | `lib.rs:471` | Admin auth, amount validation, duplicate check | [AUDIT-002] |
-| `cancel_grant` | `lib.rs:722` | Admin auth, settlement calculation, treasury return | [AUDIT-003] |
-| `rescue_tokens` | `lib.rs:751` | Admin auth, allocation checks, balance validation | [AUDIT-004] |
-| `set_sanity_oracle` | `lib.rs:775` | Admin auth, oracle validation | [AUDIT-005] |
-| `update_tvl_snapshot` | `lib.rs:805` | Admin auth, liquidity validation | [AUDIT-006] |
+| Function              | File         | Security Requirements                               | Audit References |
+| --------------------- | ------------ | --------------------------------------------------- | ---------------- |
+| `initialize`          | `lib.rs:451` | Multi-sig required, immutable after set             | [AUDIT-001]      |
+| `create_grant`        | `lib.rs:471` | Admin auth, amount validation, duplicate check      | [AUDIT-002]      |
+| `cancel_grant`        | `lib.rs:722` | Admin auth, settlement calculation, treasury return | [AUDIT-003]      |
+| `rescue_tokens`       | `lib.rs:751` | Admin auth, allocation checks, balance validation   | [AUDIT-004]      |
+| `set_sanity_oracle`   | `lib.rs:775` | Admin auth, oracle validation                       | [AUDIT-005]      |
+| `update_tvl_snapshot` | `lib.rs:805` | Admin auth, liquidity validation                    | [AUDIT-006]      |
 
 ### Double-Approval Functions (High Risk)
 
-| Function | File | Security Requirements | Audit References |
-|----------|------|---------------------|------------------|
-| `initialize_double_approval` | `lib.rs:1424` | Admin auth, approver validation, threshold check | [AUDIT-014] |
-| `create_double_approval_request` | `lib.rs:1463` | Admin auth, threshold validation, amount check | [AUDIT-015] |
-| `approve_double_approval_request` | `lib.rs:1494` | Approver auth, duplicate prevention, expiration check | [AUDIT-016] |
-| `execute_double_approval_request` | `lib.rs:1505` | Executor auth, full approval check, expiration validation | [AUDIT-017] |
-| `cancel_double_approval_request` | `lib.rs:1516` | Admin auth, status validation, authorization check | [AUDIT-018] |
+| Function                          | File          | Security Requirements                                     | Audit References |
+| --------------------------------- | ------------- | --------------------------------------------------------- | ---------------- |
+| `initialize_double_approval`      | `lib.rs:1424` | Admin auth, approver validation, threshold check          | [AUDIT-014]      |
+| `create_double_approval_request`  | `lib.rs:1463` | Admin auth, threshold validation, amount check            | [AUDIT-015]      |
+| `approve_double_approval_request` | `lib.rs:1494` | Approver auth, duplicate prevention, expiration check     | [AUDIT-016]      |
+| `execute_double_approval_request` | `lib.rs:1505` | Executor auth, full approval check, expiration validation | [AUDIT-017]      |
+| `cancel_double_approval_request`  | `lib.rs:1516` | Admin auth, status validation, authorization check        | [AUDIT-018]      |
 
 ### Oracle Functions (Medium Risk)
 
-| Function | File | Security Requirements | Audit References |
-|----------|------|---------------------|------------------|
-| `apply_kpi_multiplier` | `lib.rs:649` | Oracle auth, price freeze check, multiplier bounds | [AUDIT-007] |
-| `submit_oracle_price` | `lib.rs:784` | Oracle auth, deviation check, heartbeat update | [AUDIT-008] |
+| Function               | File         | Security Requirements                              | Audit References |
+| ---------------------- | ------------ | -------------------------------------------------- | ---------------- |
+| `apply_kpi_multiplier` | `lib.rs:649` | Oracle auth, price freeze check, multiplier bounds | [AUDIT-007]      |
+| `submit_oracle_price`  | `lib.rs:784` | Oracle auth, deviation check, heartbeat update     | [AUDIT-008]      |
 
 ### Recipient Functions (Low Risk)
 
-| Function | File | Security Requirements | Audit References |
-|----------|------|---------------------|------------------|
-| `withdraw` | `lib.rs:537` | Recipient auth, soft pause check, legal signature | [AUDIT-009] |
-| `rage_quit` | `lib.rs:681` | Recipient auth, paused state only, settlement | [AUDIT-010] |
+| Function    | File         | Security Requirements                             | Audit References |
+| ----------- | ------------ | ------------------------------------------------- | ---------------- |
+| `withdraw`  | `lib.rs:537` | Recipient auth, soft pause check, legal signature | [AUDIT-009]      |
+| `rage_quit` | `lib.rs:681` | Recipient auth, paused state only, settlement     | [AUDIT-010]      |
 
 ### Security-Critical Internal Functions
 
-| Function | File | Security Requirements | Audit References |
-|----------|------|---------------------|------------------|
-| `settle_grant` | `lib.rs:261` | Overflow protection, legal compliance, time validation | [AUDIT-011] |
-| `apply_accrued_split` | `lib.rs:237` | Math overflow, validator share calculation | [AUDIT-012] |
-| `total_allocated_funds` | `lib.rs:196` | Active grant filtering, overflow protection | [AUDIT-013] |
+| Function                | File         | Security Requirements                                  | Audit References |
+| ----------------------- | ------------ | ------------------------------------------------------ | ---------------- |
+| `settle_grant`          | `lib.rs:261` | Overflow protection, legal compliance, time validation | [AUDIT-011]      |
+| `apply_accrued_split`   | `lib.rs:237` | Math overflow, validator share calculation             | [AUDIT-012]      |
+| `total_allocated_funds` | `lib.rs:196` | Active grant filtering, overflow protection            | [AUDIT-013]      |
 
 ---
 
@@ -106,26 +110,31 @@ The Grant Stream protocol implements multiple security layers:
 ### High-Severity Threats
 
 #### 1. Admin Key Compromise
+
 - **Impact**: Full protocol control, fund redirection
 - **Likelihood**: Medium (depends on key management)
 - **Mitigations**: Multi-sig, HSM/MPC, rotation procedures
 
 #### 2. Oracle Manipulation
+
 - **Impact**: Incorrect KPI multipliers, payment manipulation
 - **Likelihood**: Medium
 - **Mitigations**: Price deviation checks, sanity oracle, heartbeat monitoring
 
 #### 3. Reentrancy Attacks
+
 - **Impact**: State manipulation, double withdrawals
 - **Likelihood**: Low (protected by manual guards)
 - **Mitigations**: Non-reentrant guards, temporary storage locks
 
 #### 4. Circuit Breaker Bypass
+
 - **Impact**: Large fund drains, price manipulation
 - **Likelihood**: Low
 - **Mitigations**: Multiple independent checks, admin overrides
 
 #### 5. Double-Approval System Bypass
+
 - **Impact**: Unauthorized high-value payouts, single point compromise
 - **Likelihood**: Low (requires dual compromise)
 - **Mitigations**: Separate approver roles, time windows, audit logging
@@ -133,14 +142,17 @@ The Grant Stream protocol implements multiple security layers:
 ### Medium-Severity Threats
 
 #### 1. Legal Compliance Bypass
+
 - **Impact**: Regulatory violations, fund streaming without agreements
 - **Mitigations**: On-chain signature requirements, legal hash storage
 
 #### 2. Math Overflow/Underflow
+
 - **Impact**: Incorrect calculations, fund loss
 - **Mitigations**: Checked arithmetic, comprehensive testing
 
 #### 3. Token Integration Issues
+
 - **Impact**: Transfer failures, accounting errors
 - **Mitigations**: Token allowlist, integration testing
 
@@ -218,24 +230,24 @@ pub fn withdraw(env: Env, grant_id: u64, amount: i128) -> Result<(), Error> {
 
 ### Completed Audits
 
-| Audit ID | Date | Auditor | Scope | Findings | Status |
-|----------|------|---------|-------|----------|---------|
-| [AUDIT-001] | 2024-Q1 | Zealynx | Core protocol | 3 findings | Resolved |
-| [AUDIT-002] | 2024-Q2 | Trail of Bits | Reentrancy | 1 finding | Resolved |
-| [AUDIT-003] | 2024-Q3 | ConsenSys | Circuit breakers | 2 findings | Resolved |
+| Audit ID    | Date    | Auditor       | Scope            | Findings   | Status   |
+| ----------- | ------- | ------------- | ---------------- | ---------- | -------- |
+| [AUDIT-001] | 2024-Q1 | Zealynx       | Core protocol    | 3 findings | Resolved |
+| [AUDIT-002] | 2024-Q2 | Trail of Bits | Reentrancy       | 1 finding  | Resolved |
+| [AUDIT-003] | 2024-Q3 | ConsenSys     | Circuit breakers | 2 findings | Resolved |
 
 ### In-Progress Audits
 
-| Audit ID | Date | Auditor | Scope | Status |
-|----------|------|---------|-------|---------|
+| Audit ID    | Date    | Auditor      | Scope         | Status      |
+| ----------- | ------- | ------------ | ------------- | ----------- |
 | [AUDIT-014] | 2024-Q4 | OpenZeppelin | Full protocol | In Progress |
 
 ### Planned Audits
 
-| Audit ID | Target Date | Auditor | Scope |
-|----------|-------------|---------|-------|
-| [AUDIT-015] | 2025-Q1 | CertiK | Formal verification |
-| [AUDIT-016] | 2025-Q2 | NCC Group | Penetration testing |
+| Audit ID    | Target Date | Auditor   | Scope               |
+| ----------- | ----------- | --------- | ------------------- |
+| [AUDIT-015] | 2025-Q1     | CertiK    | Formal verification |
+| [AUDIT-016] | 2025-Q2     | NCC Group | Penetration testing |
 
 ---
 
@@ -251,6 +263,7 @@ pub fn withdraw(env: Env, grant_id: u64, amount: i128) -> Result<(), Error> {
 ### Response Procedures
 
 #### Critical Incidents
+
 1. Immediate protocol pause via admin functions
 2. Multi-sig emergency meeting
 3. Public disclosure within 24 hours
@@ -258,6 +271,7 @@ pub fn withdraw(env: Env, grant_id: u64, amount: i128) -> Result<(), Error> {
 5. Gradual protocol resume
 
 #### High Severity Incidents
+
 1. Admin assessment within 1 hour
 2. Temporary mitigation deployment
 3. Full investigation within 24 hours
@@ -281,7 +295,7 @@ pub fn withdraw(env: Env, grant_id: u64, amount: i128) -> Result<(), Error> {
    - Automated security testing in CI/CD
 
 2. **Testing Standards**
-   - >95% code coverage required
+   - > 95% code coverage required
    - Fuzz testing for all arithmetic operations
    - Integration testing with external contracts
 
@@ -325,11 +339,13 @@ pub fn withdraw(env: Env, grant_id: u64, amount: i128) -> Result<(), Error> {
 
 ### A. Security Function Matrix
 
-Detailed mapping of all security-sensitive functions to their requirements and audit status. See `AUDIT_READY.rs` for the complete mapping.
+Detailed mapping of all security-sensitive functions to their requirements and
+audit status. See `AUDIT_READY.rs` for the complete mapping.
 
 ### B. Threat Modeling Details
 
-Comprehensive threat models including attack trees and risk assessments for each protocol component.
+Comprehensive threat models including attack trees and risk assessments for each
+protocol component.
 
 ### C. Compliance Framework
 
@@ -337,7 +353,8 @@ Alignment with relevant security standards and regulatory requirements.
 
 ### D. Security Metrics
 
-Key performance indicators for security posture and incident response effectiveness.
+Key performance indicators for security posture and incident response
+effectiveness.
 
 ---
 

@@ -9,18 +9,17 @@
  *   POST /escrow/:escrowId/withdraw → withdraw from escrow (blocked if legal_hold)
  */
 
-"use strict";
+'use strict';
 
-const { Router }                           = require("express");
-const { readEscrow }                       = require("../services/escrowRead");
-const { fundEscrow, releaseEscrow,
-        withdrawFromEscrow }              = require("../services/escrowWrite");
-const legalHoldGate                        = require("../middleware/legalHoldGate");
+const { Router } = require('express');
+const { readEscrow } = require('../services/escrowRead');
+const { fundEscrow, releaseEscrow, withdrawFromEscrow } = require('../services/escrowWrite');
+const legalHoldGate = require('../middleware/legalHoldGate');
 
 const router = Router({ mergeParams: true });
 
 // GET /escrow/:escrowId
-router.get("/:escrowId", async (req, res, next) => {
+router.get('/:escrowId', async (req, res, next) => {
   try {
     const escrow = await readEscrow(req.params.escrowId);
     return res.status(200).json(escrow);
@@ -33,11 +32,11 @@ router.get("/:escrowId", async (req, res, next) => {
 });
 
 // POST /escrow/:escrowId/fund
-router.post("/:escrowId/fund", legalHoldGate, async (req, res, next) => {
+router.post('/:escrowId/fund', legalHoldGate, async (req, res, next) => {
   try {
     const { amount } = req.body;
     if (!amount) {
-      return res.status(400).json({ error: "Missing amount" });
+      return res.status(400).json({ error: 'Missing amount' });
     }
     const result = await fundEscrow(req.params.escrowId, amount);
     return res.status(200).json(result);
@@ -50,7 +49,7 @@ router.post("/:escrowId/fund", legalHoldGate, async (req, res, next) => {
 });
 
 // POST /escrow/:escrowId/release
-router.post("/:escrowId/release", legalHoldGate, async (req, res, next) => {
+router.post('/:escrowId/release', legalHoldGate, async (req, res, next) => {
   try {
     const result = await releaseEscrow(req.params.escrowId);
     return res.status(200).json(result);
@@ -63,7 +62,7 @@ router.post("/:escrowId/release", legalHoldGate, async (req, res, next) => {
 });
 
 // POST /escrow/:escrowId/withdraw
-router.post("/:escrowId/withdraw", legalHoldGate, async (req, res, next) => {
+router.post('/:escrowId/withdraw', legalHoldGate, async (req, res, next) => {
   try {
     const { amount } = req.body;
     const result = await withdrawFromEscrow(req.params.escrowId, amount);

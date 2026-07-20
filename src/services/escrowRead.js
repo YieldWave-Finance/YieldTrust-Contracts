@@ -1,6 +1,6 @@
-"use strict";
+'use strict';
 
-const { onChainAdapter } = require("../adapters/onChainAdapter");
+const { onChainAdapter } = require('../adapters/onChainAdapter');
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -12,8 +12,8 @@ const ESCROW_ID_RE = /^[a-zA-Z0-9_-]{1,64}$/;
  * @throws {Error} with `statusCode = 400` if invalid.
  */
 function validateEscrowId(id) {
-  if (typeof id !== "string" || !ESCROW_ID_RE.test(id)) {
-    const err = new Error("Invalid escrow ID");
+  if (typeof id !== 'string' || !ESCROW_ID_RE.test(id)) {
+    const err = new Error('Invalid escrow ID');
     err.statusCode = 400;
     throw err;
   }
@@ -42,13 +42,13 @@ async function readEscrow(escrowId) {
   } catch (err) {
     // Re-throw validation errors as-is; wrap everything else
     if (err.statusCode) throw err;
-    const wrapped = new Error("Failed to fetch escrow data");
+    const wrapped = new Error('Failed to fetch escrow data');
     wrapped.statusCode = 503;
     throw wrapped;
   }
 
-  if (!raw || typeof raw !== "object") {
-    const err = new Error("Escrow not found");
+  if (!raw || typeof raw !== 'object') {
+    const err = new Error('Escrow not found');
     err.statusCode = 404;
     throw err;
   }
@@ -70,7 +70,7 @@ async function readEscrow(escrowId) {
  */
 function normalise(escrowId, raw) {
   const legalHold =
-    typeof raw.legal_hold === "boolean"
+    typeof raw.legal_hold === 'boolean'
       ? raw.legal_hold
       : raw.legalHold === true
         ? true
@@ -79,10 +79,10 @@ function normalise(escrowId, raw) {
           : true; // safe default: treat unknown as held
 
   return {
-    escrow_id:  escrowId,
-    balance:    String(raw.balance   ?? "0"),
-    recipient:  String(raw.recipient ?? ""),
-    status:     String(raw.status    ?? "unknown"),
+    escrow_id: escrowId,
+    balance: String(raw.balance ?? '0'),
+    recipient: String(raw.recipient ?? ''),
+    status: String(raw.status ?? 'unknown'),
     legal_hold: legalHold,
   };
 }
