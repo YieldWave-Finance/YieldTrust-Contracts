@@ -2,11 +2,17 @@
 
 ## Overview
 
-This feature implements partial grant self-termination, allowing grantees to gracefully terminate their own grants when projects are completed early. This provides autonomy to grantees while ensuring proper fund settlement and refund of unspent portions to the DAO.
+This feature implements partial grant self-termination, allowing grantees to
+gracefully terminate their own grants when projects are completed early. This
+provides autonomy to grantees while ensuring proper fund settlement and refund
+of unspent portions to the DAO.
 
 ## Problem Statement
 
-Currently, grants can only be terminated by administrators, creating dependency and potential delays when grantees complete projects early or need to terminate grants for other reasons. Grantees should have the ability to self-terminate their grants without requiring admin intervention.
+Currently, grants can only be terminated by administrators, creating dependency
+and potential delays when grantees complete projects early or need to terminate
+grants for other reasons. Grantees should have the ability to self-terminate
+their grants without requiring admin intervention.
 
 ## Solution: Self-Termination Mechanism
 
@@ -81,17 +87,17 @@ println!("Termination reason: {}", details.termination_reason);
 
 ### Allowed Self-Termination Transitions
 
-| From State | To State | Who Can Trigger | Conditions |
-|-------------|-----------|------------------|------------|
-| Active | Self-Terminated | Grantee | Grantee authentication |
-| Paused | Self-Terminated | Grantee | Grantee authentication |
+| From State | To State        | Who Can Trigger | Conditions             |
+| ---------- | --------------- | --------------- | ---------------------- |
+| Active     | Self-Terminated | Grantee         | Grantee authentication |
+| Paused     | Self-Terminated | Grantee         | Grantee authentication |
 
 ### Disallowed Self-Termination Transitions
 
-| From State | Reason |
-|-------------|---------|
-| Completed | Grant already completed |
-| Cancelled | Grant already cancelled |
+| From State      | Reason                  |
+| --------------- | ----------------------- |
+| Completed       | Grant already completed |
+| Cancelled       | Grant already cancelled |
 | Self-Terminated | Already self-terminated |
 
 ## Financial Flow
@@ -120,16 +126,19 @@ admin_receives = remaining_balance  // Unspent portion
 ## Security Considerations
 
 ### Authentication
+
 - **Grantee Verification** - Only grant recipient can self-terminate
 - **Authorization Check** - Proper signature validation
 - **Replay Protection** - Prevent duplicate terminations
 
 ### State Validation
+
 - **Transition Rules** - Enforce valid state transitions
 - **Status Consistency** - Maintain status flag integrity
 - **Overflow Protection** - Safe arithmetic operations
 
 ### Financial Safety
+
 - **Accurate Calculations** - Precise fund distribution
 - **Atomic Operations** - All-or-nothing execution
 - **Audit Trail** - Complete event logging
@@ -138,16 +147,17 @@ admin_receives = remaining_balance  // Unspent portion
 
 ### Optimized Operations
 
-| Operation | Estimated Gas | Optimization |
-|-----------|----------------|--------------|
-| Self-Termination | ~12,000 | Single storage write |
-| Status Check | ~1,500 | Bitwise operations |
-| Termination Details | ~2,000 | Direct storage read |
-| Eligibility Check | ~1,200 | Simple status validation |
+| Operation           | Estimated Gas | Optimization             |
+| ------------------- | ------------- | ------------------------ |
+| Self-Termination    | ~12,000       | Single storage write     |
+| Status Check        | ~1,500        | Bitwise operations       |
+| Termination Details | ~2,000        | Direct storage read      |
+| Eligibility Check   | ~1,200        | Simple status validation |
 
 ### Batch Operations
 
 For multiple self-terminations:
+
 - **Linear Scaling** - O(n) complexity
 - **Shared Calculations** - Efficient batch processing
 - **Reduced Storage Writes** - Optimized updates
@@ -212,16 +222,19 @@ env.events().publish(
 ## Migration Strategy
 
 ### Phase 1: Feature Deployment
+
 1. Deploy self-termination contract
 2. Update client libraries
 3. Documentation and training
 
 ### Phase 2: Gradual Adoption
+
 1. Enable for new grants
 2. Monitor usage patterns
 3. Collect feedback
 
 ### Phase 3: Full Rollout
+
 1. Enable for existing grants
 2. Deprecate admin-only termination
 3. Update governance processes
@@ -231,17 +244,20 @@ env.events().publish(
 ### Core Functions
 
 #### `self_terminate(env, grant_id)`
+
 - **Purpose**: Allow grantee to terminate their grant
 - **Authentication**: Requires grantee signature
 - **Returns**: `SelfTerminateResult` with termination details
 - **Errors**: Authorization, state validation, financial errors
 
 #### `can_self_terminate(env, grant_id)`
+
 - **Purpose**: Check if grant can be self-terminated
 - **Returns**: Boolean indicating eligibility
 - **Use**: Pre-flight checks before attempting termination
 
 #### `get_termination_details(env, grant_id)`
+
 - **Purpose**: Get termination details for self-terminated grants
 - **Returns**: `SelfTerminateResult` if terminated, error otherwise
 - **Use**: Audit and reporting purposes
@@ -249,10 +265,12 @@ env.events().publish(
 ### Helper Functions
 
 #### `is_self_terminated(status_mask)`
+
 - **Purpose**: Check if grant is self-terminated
 - **Returns**: Boolean status check
 
 #### `can_be_self_terminated(status_mask)`
+
 - **Purpose**: Validate termination eligibility
 - **Returns**: Boolean eligibility check
 
@@ -260,13 +278,13 @@ env.events().publish(
 
 ### Self-Termination Errors
 
-| Error | Code | Description |
-|--------|-------|-------------|
-| AlreadyTerminated | 11 | Grant already self-terminated |
-| CannotTerminateCompleted | 12 | Cannot terminate completed grants |
-| CannotTerminateCancelled | 13 | Cannot terminate cancelled grants |
-| InsufficientBalance | 14 | Insufficient balance for operations |
-| TransferFailed | 15 | Token transfer failed |
+| Error                    | Code | Description                         |
+| ------------------------ | ---- | ----------------------------------- |
+| AlreadyTerminated        | 11   | Grant already self-terminated       |
+| CannotTerminateCompleted | 12   | Cannot terminate completed grants   |
+| CannotTerminateCancelled | 13   | Cannot terminate cancelled grants   |
+| InsufficientBalance      | 14   | Insufficient balance for operations |
+| TransferFailed           | 15   | Token transfer failed               |
 
 ### Error Recovery
 
@@ -321,7 +339,9 @@ The self-termination feature provides significant benefits:
 - **Audit Trail** - Complete transparency
 - **Gas Optimization** - Efficient implementation
 
-This implementation addresses all requirements from issue #33 and provides a robust, secure, and user-friendly self-termination mechanism for grant contracts.
+This implementation addresses all requirements from issue #33 and provides a
+robust, secure, and user-friendly self-termination mechanism for grant
+contracts.
 
 ## Files Modified
 

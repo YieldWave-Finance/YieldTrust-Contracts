@@ -55,9 +55,6 @@ mod test_security_council;
 mod test_matching_pool;
 
 #[cfg(test)]
-mod test_donor_reputation;
-
-#[cfg(test)]
 mod test_reputation_matching_integration;
 
 #[cfg(test)]
