@@ -9,7 +9,9 @@
     "format": "prettier --write \"src/**/*.js\" \"tests/**/*.js\" \"*.json\" \"*.md\" \"*.yml\" \"*.yaml\"",
     "format:check": "prettier --check \"src/**/*.js\" \"tests/**/*.js\" \"*.json\" \"*.md\" \"*.yml\" \"*.yaml\"",
     "test": "jest --runInBand --forceExit",
-    "test:coverage": "jest --runInBand --forceExit --coverage"
+    "test:coverage": "jest --runInBand --forceExit --coverage",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "express": "^4.19.2",
