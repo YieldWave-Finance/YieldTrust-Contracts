@@ -2,23 +2,28 @@
 
 ## Overview
 
-This optimization implements a bit-packed status system for grant contracts, replacing multiple boolean fields with a single u32 status mask. This significantly reduces storage costs and improves gas efficiency.
+This optimization implements a bit-packed status system for grant contracts,
+replacing multiple boolean fields with a single u32 status mask. This
+significantly reduces storage costs and improves gas efficiency.
 
 ## Problem Statement
 
-The original implementation stored grant status as an enum with separate boolean fields:
+The original implementation stored grant status as an enum with separate boolean
+fields:
+
 ```rust
 pub status: GrantStatus,  // Active, Completed, Cancelled
 // Additional fields would be needed for:
 // - is_paused: bool
-// - is_revocable: bool  
+// - is_revocable: bool
 // - is_completed: bool
 // - is_milestone_based: bool
 // - auto_renew: bool
 // - emergency_pause: bool
 ```
 
-This approach requires multiple storage entries per grant, increasing costs significantly.
+This approach requires multiple storage entries per grant, increasing costs
+significantly.
 
 ## Solution: Bit-Packed Status Mask
 
@@ -105,39 +110,43 @@ pub fn is_grant_cancelled(status_mask: u32) -> bool {
 
 ### Storage Cost Comparison
 
-| Implementation | Storage Entries | Cost per Grant | Total Cost (1000 grants) |
-|-------------|----------------|---------------|----------------------|
-| Original | ~4 entries | ~40,000 gas | ~40,000,000 gas |
-| Optimized | 1 entry | ~10,000 gas | ~10,000,000 gas |
-| **Savings** | **75% reduction** | **30,000 gas** | **30,000,000 gas** |
+| Implementation | Storage Entries   | Cost per Grant | Total Cost (1000 grants) |
+| -------------- | ----------------- | -------------- | ------------------------ |
+| Original       | ~4 entries        | ~40,000 gas    | ~40,000,000 gas          |
+| Optimized      | 1 entry           | ~10,000 gas    | ~10,000,000 gas          |
+| **Savings**    | **75% reduction** | **30,000 gas** | **30,000,000 gas**       |
 
 ### Operation Efficiency
 
-| Operation | Original Gas | Optimized Gas | Savings |
-|-----------|-------------|--------------|---------|
-| Status Check | 5,000 | 1,200 | 76% |
-| Pause/Resume | 8,000 | 2,500 | 69% |
-| Flag Update | 6,000 | 1,800 | 70% |
-| Batch Operations | 50,000 | 15,000 | 70% |
+| Operation        | Original Gas | Optimized Gas | Savings |
+| ---------------- | ------------ | ------------- | ------- |
+| Status Check     | 5,000        | 1,200         | 76%     |
+| Pause/Resume     | 8,000        | 2,500         | 69%     |
+| Flag Update      | 6,000        | 1,800         | 70%     |
+| Batch Operations | 50,000       | 15,000        | 70%     |
 
 ## Implementation Benefits
 
 ### 1. Storage Cost Reduction
+
 - **Single Storage Entry**: Replaces 4+ boolean fields with one u32
 - **75% Storage Savings**: Significant reduction in ledger storage costs
 - **Scalability**: Linear cost scaling vs exponential with multiple flags
 
 ### 2. Gas Efficiency
+
 - **Bitwise Operations**: Extremely fast CPU operations
 - **Batch Operations**: Efficient flag manipulation for multiple grants
 - **Reduced Instructions**: Fewer storage reads/writes per operation
 
 ### 3. Flexibility
+
 - **8 Status Flags**: Support for current and future status types
 - **Easy Extension**: Add new flags without breaking changes
 - **Backward Compatibility**: Can coexist with enum-based status
 
 ### 4. Advanced Features
+
 - **Status Transitions**: Validated state machine with bitwise checks
 - **Batch Operations**: Efficient bulk flag updates
 - **Complex Queries**: Multi-flag filtering with single operation
@@ -189,16 +198,19 @@ for grant_id in grant_ids {
 ## Migration Strategy
 
 ### Phase 1: Parallel Implementation
+
 1. Deploy optimized contract alongside existing implementation
 2. Use feature flags to enable optimized version
 3. Test thoroughly on testnet
 
 ### Phase 2: Gradual Migration
+
 1. Migrate new grants to optimized storage
 2. Maintain backward compatibility for existing grants
 3. Monitor gas savings and performance
 
 ### Phase 3: Full Migration
+
 1. Migrate all existing grants
 2. Decommission old implementation
 3. Remove backward compatibility code
@@ -206,17 +218,20 @@ for grant_id in grant_ids {
 ## Testing and Validation
 
 ### Unit Tests
+
 - Bitwise operation correctness
 - Status transition validation
 - Gas consumption benchmarks
 - Large-scale simulations
 
 ### Integration Tests
+
 - End-to-end grant lifecycle
 - Multi-grant operations
 - Performance under load
 
 ### Security Audits
+
 - Status manipulation security
 - Access control validation
 - Overflow protection verification
@@ -224,26 +239,30 @@ for grant_id in grant_ids {
 ## Performance Monitoring
 
 ### Metrics to Track
+
 - Gas consumption per operation
 - Storage cost per grant
 - Batch operation efficiency
 - Large-scale deployment costs
 
 ### Benchmarks
+
 - Single grant creation: ~10,000 gas
-- Status check: ~1,200 gas  
+- Status check: ~1,200 gas
 - Pause/resume: ~2,500 gas
 - Batch flag updates: ~15,000 gas for 1000 grants
 
 ## Future Enhancements
 
 ### Additional Optimizations
+
 1. **Event Streaming**: Efficient status change notifications
 2. **Caching Layer**: Cache frequently accessed status masks
 3. **Compression**: Compress status data for complex scenarios
 4. **Parallel Processing**: Optimize batch operations further
 
 ### Advanced Features
+
 1. **Dynamic Flags**: Runtime-configurable status flags
 2. **Conditional Logic**: Complex rule-based status transitions
 3. **Analytics**: Built-in usage analytics and reporting
@@ -254,17 +273,18 @@ for grant_id in grant_ids {
 The bit-packed status optimization provides significant benefits:
 
 - **75% reduction** in storage costs
-- **70% improvement** in operational efficiency  
+- **70% improvement** in operational efficiency
 - **Linear scalability** for large deployments
 - **Enhanced flexibility** for future features
 - **Backward compatibility** during migration
 
-This implementation addresses the core requirements of issue #45 and provides a foundation for efficient, scalable grant management on Stellar blockchain.
+This implementation addresses the core requirements of issue #45 and provides a
+foundation for efficient, scalable grant management on Stellar blockchain.
 
 ## Files Modified
 
 - `src/optimized.rs` - New optimized implementation
-- `src/benchmarks.rs` - Gas efficiency benchmarks  
+- `src/benchmarks.rs` - Gas efficiency benchmarks
 - `src/test_optimized.rs` - Comprehensive test suite
 - `src/lib.rs` - Updated exports and module structure
 - `BITPACK_OPTIMIZATION.md` - This documentation

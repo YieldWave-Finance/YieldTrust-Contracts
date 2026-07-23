@@ -2,29 +2,37 @@
 
 ## Overview
 
-This document describes the implementation of a double-approval security mechanism designed to protect high-value milestone payouts in the Grant Stream Contracts system. The system requires two distinct authorizations before releasing significant funds, preventing unauthorized or fraudulent transactions.
+This document describes the implementation of a double-approval security
+mechanism designed to protect high-value milestone payouts in the Grant Stream
+Contracts system. The system requires two distinct authorizations before
+releasing significant funds, preventing unauthorized or fraudulent transactions.
 
 ## Security Features
 
 ### 🔐 **Dual Authorization Requirement**
+
 - **Primary Approver**: Typically the contract administrator
-- **Secondary Approver**: Typically the oracle or designated governance authority
+- **Secondary Approver**: Typically the oracle or designated governance
+  authority
 - Both approvals must be obtained before fund release
 - Configurable threshold determines when double-approval is required
 
 ### ⏰ **Time-Based Security**
+
 - Approval windows prevent stale requests
 - Default: 7 days (configurable)
 - Automatic expiration of unapproved requests
 - Protection against delayed exploitation
 
 ### 🛡️ **Comprehensive Access Control**
+
 - Role-based authorization for approvers
 - Duplicate approval prevention
 - Request cancellation by authorized parties
 - Execution limited to approved executors
 
 ### 📊 **Full Audit Trail**
+
 - Event emission for all operations
 - Request lifecycle tracking
 - Approval history preservation
@@ -35,6 +43,7 @@ This document describes the implementation of a double-approval security mechani
 ### Data Structures
 
 #### `DoubleApprovalRequest`
+
 ```rust
 pub struct DoubleApprovalRequest {
     pub grant_id: u64,
@@ -52,6 +61,7 @@ pub struct DoubleApprovalRequest {
 ```
 
 #### `ApprovalStatus`
+
 ```rust
 pub enum ApprovalStatus {
     Pending,           // Request created, awaiting approvals
@@ -64,6 +74,7 @@ pub enum ApprovalStatus {
 ```
 
 #### `DoubleApprovalConfig`
+
 ```rust
 pub struct DoubleApprovalConfig {
     pub high_value_threshold: i128,    // Minimum amount requiring double approval
@@ -76,16 +87,17 @@ pub struct DoubleApprovalConfig {
 
 ### Storage Layout
 
-| Storage Key | Description | Namespace |
-|-------------|-------------|-----------|
-| `DoubleApprovalConfig` | Global configuration | grant |
-| `DoubleApprovalRequest(grant_id, milestone_index)` | Individual requests | grant |
+| Storage Key                                        | Description          | Namespace |
+| -------------------------------------------------- | -------------------- | --------- |
+| `DoubleApprovalConfig`                             | Global configuration | grant     |
+| `DoubleApprovalRequest(grant_id, milestone_index)` | Individual requests  | grant     |
 
 ## API Reference
 
 ### Configuration Management
 
 #### `initialize_double_approval(admin, oracle, threshold, window)`
+
 - **Purpose**: Initialize the double-approval system
 - **Authorization**: Admin only
 - **Parameters**:
@@ -95,11 +107,13 @@ pub struct DoubleApprovalConfig {
   - `approval_window_secs`: Approval time window in seconds
 
 #### `update_double_approval_config(threshold, window, enabled)`
+
 - **Purpose**: Update configuration parameters
 - **Authorization**: Admin only
 - **Parameters**: All optional, updates only provided values
 
 #### `get_double_approval_config()`
+
 - **Purpose**: Retrieve current configuration
 - **Authorization**: Public read
 - **Returns**: `DoubleApprovalConfig`
@@ -107,6 +121,7 @@ pub struct DoubleApprovalConfig {
 ### Request Management
 
 #### `create_double_approval_request(grant_id, milestone_index, amount, recipient, token_address, reason)`
+
 - **Purpose**: Create a new double-approval request
 - **Authorization**: Admin only
 - **Parameters**:
@@ -119,11 +134,13 @@ pub struct DoubleApprovalConfig {
 - **Returns**: Unique request ID
 
 #### `get_double_approval_request(grant_id, milestone_index)`
+
 - **Purpose**: Retrieve request details
 - **Authorization**: Public read
 - **Returns**: `DoubleApprovalRequest`
 
 #### `approve_double_approval_request(grant_id, milestone_index, approver)`
+
 - **Purpose**: Approve a pending request
 - **Authorization**: Authorized approvers only
 - **Parameters**:
@@ -132,11 +149,13 @@ pub struct DoubleApprovalConfig {
   - `approver`: Approver address (must authenticate)
 
 #### `execute_double_approval_request(grant_id, milestone_index, executor)`
+
 - **Purpose**: Execute a fully approved request
 - **Authorization**: Authorized executors only
 - **Effect**: Transfers tokens to recipient
 
 #### `cancel_double_approval_request(grant_id, milestone_index, canceller)`
+
 - **Purpose**: Cancel a pending request
 - **Authorization**: Admin only
 - **Effect**: Marks request as cancelled
@@ -144,16 +163,19 @@ pub struct DoubleApprovalConfig {
 ### Utility Functions
 
 #### `requires_double_approval(amount)`
+
 - **Purpose**: Check if amount requires double approval
 - **Authorization**: Public read
 - **Returns**: Boolean indicating requirement
 
 #### `has_double_approval_request(grant_id, milestone_index)`
+
 - **Purpose**: Check if milestone has pending request
 - **Authorization**: Public read
 - **Returns**: Boolean indicating request existence
 
 #### `claim_milestone_with_double_approval(grant_id, milestone_index, amount)`
+
 - **Purpose**: Enhanced milestone claim with double-approval integration
 - **Authorization**: Grantee only
 - **Logic**:
@@ -166,43 +188,52 @@ pub struct DoubleApprovalConfig {
 ### Threat Mitigation
 
 #### 🚫 **Unauthorized Fund Release**
+
 - **Mitigation**: Dual authorization requirement
 - **Effect**: Single compromised account cannot release funds
 
 #### 🚫 **Stale Request Exploitation**
+
 - **Mitigation**: Time-based expiration
 - **Effect**: Old requests cannot be exploited later
 
 #### 🚫 **Approval Manipulation**
+
 - **Mitigation**: Duplicate approval prevention
 - **Effect**: Single approver cannot approve twice
 
 #### 🚫 **Request Hijacking**
+
 - **Mitigation**: Authorized executor validation
 - **Effect**: Only approved parties can execute requests
 
 #### 🚫 **Configuration Tampering**
+
 - **Mitigation**: Admin-only configuration changes
 - **Effect**: System parameters protected
 
 ### Security Properties
 
 #### ✅ **Separation of Duties**
+
 - Different parties must approve
 - Prevents single point of failure
 - Enforces collaboration requirement
 
 #### ✅ **Temporal Security**
+
 - Time-limited approval windows
 - Automatic expiration
 - Reduces attack surface over time
 
 #### ✅ **Audit Completeness**
+
 - All operations emit events
 - Full request lifecycle tracking
 - Transparent governance
 
 #### ✅ **Configurable Thresholds**
+
 - Flexible value thresholds
 - Adjustable time windows
 - Enable/disable capability
@@ -227,21 +258,25 @@ pub struct DoubleApprovalConfig {
 ### Security Best Practices
 
 #### 📋 **Appoint Distinct Approvers**
+
 - Use different entities for primary and secondary approval
 - Consider using oracle for secondary approval
 - Ensure approvers are independent
 
 #### ⚖️ **Set Appropriate Thresholds**
+
 - Balance security with operational efficiency
 - Consider typical grant sizes
 - Adjust based on risk assessment
 
 #### ⏱️ **Configure Reasonable Time Windows**
+
 - Allow sufficient time for review
 - Prevent indefinite pending requests
 - Consider business hours and holidays
 
 #### 🔍 **Regular Monitoring**
+
 - Monitor pending requests
 - Review approval patterns
 - Audit executed transactions
@@ -263,9 +298,9 @@ if requires_double_approval(env, amount)? {
         token_address,
         Some("Milestone completion verified".to_string()),
     )?;
-    
+
     // Wait for approvals...
-    
+
     // Execute once fully approved
     execute_double_approval_request(env, grant_id, milestone_index, executor)?;
 } else {
@@ -296,16 +331,17 @@ assert_eq!(config.high_value_threshold, 100_000_000);
 
 ### Request Events
 
-| Event | Parameters | Description |
-|-------|------------|-------------|
-| `dbl_req` | `(request_id, grant_id, milestone_index, amount)` | Request created |
-| `dbl_appr` | `(grant_id, milestone_index, approver, status)` | Request approved |
-| `dbl_exec` | `(grant_id, milestone_index, amount, recipient)` | Request executed |
-| `dbl_cancel` | `(grant_id, milestone_index, canceller)` | Request cancelled |
+| Event        | Parameters                                        | Description       |
+| ------------ | ------------------------------------------------- | ----------------- |
+| `dbl_req`    | `(request_id, grant_id, milestone_index, amount)` | Request created   |
+| `dbl_appr`   | `(grant_id, milestone_index, approver, status)`   | Request approved  |
+| `dbl_exec`   | `(grant_id, milestone_index, amount, recipient)`  | Request executed  |
+| `dbl_cancel` | `(grant_id, milestone_index, canceller)`          | Request cancelled |
 
 ### Monitoring
 
 Events can be monitored by:
+
 - Off-chain indexing services
 - Governance dashboards
 - Alert systems
@@ -316,6 +352,7 @@ Events can be monitored by:
 ### Test Coverage
 
 The implementation includes comprehensive tests covering:
+
 - Configuration management
 - Request lifecycle
 - Authorization validation
@@ -325,6 +362,7 @@ The implementation includes comprehensive tests covering:
 ### Security Tests
 
 Specific security test scenarios:
+
 - Unauthorized approval attempts
 - Duplicate approval prevention
 - Request expiration handling
@@ -344,6 +382,7 @@ Specific security test scenarios:
 ### Upgrade Path
 
 The system is designed for:
+
 - Backward compatibility
 - Gradual feature rollout
 - Configuration migration
@@ -351,6 +390,12 @@ The system is designed for:
 
 ## Conclusion
 
-The double-approval security system provides robust protection for high-value milestone payouts while maintaining operational flexibility. By requiring dual authorization, implementing time-based security, and providing comprehensive audit trails, the system significantly reduces the risk of unauthorized fund release while supporting efficient grant management operations.
+The double-approval security system provides robust protection for high-value
+milestone payouts while maintaining operational flexibility. By requiring dual
+authorization, implementing time-based security, and providing comprehensive
+audit trails, the system significantly reduces the risk of unauthorized fund
+release while supporting efficient grant management operations.
 
-The implementation follows security best practices and provides a solid foundation for secure milestone-based fund distribution in decentralized grant management systems.
+The implementation follows security best practices and provides a solid
+foundation for secure milestone-based fund distribution in decentralized grant
+management systems.
