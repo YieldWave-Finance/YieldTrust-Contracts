@@ -1,16 +1,23 @@
 # AgriTrust-Contracts
 
-Smart contracts for managing trust streams with milestone completion proof hashing and integrated dispute resolution system on Stellar (Soroban WASM) and Ethereum/L2s (Solidity).
+Smart contracts for managing trust streams with milestone completion proof
+hashing and integrated dispute resolution system on Stellar (Soroban WASM) and
+Ethereum/L2s (Solidity).
 
 ## 🚀 Key Features
 
-- **Per-Second Streaming Accrual:** High-precision streaming logic using scaling factors on Soroban.
-- **Legal Anchoring & Escrow:** Restricts fund streaming until legal documents are cryptographically signed on-chain, alongside an integrated arbitration escrow.
-- **Multi-Chain Smart Contracts:** Soroban-based smart contract implementation alongside a Foundry/Solidity implementation supporting ZK proof verification.
+- **Per-Second Streaming Accrual:** High-precision streaming logic using scaling
+  factors on Soroban.
+- **Legal Anchoring & Escrow:** Restricts fund streaming until legal documents
+  are cryptographically signed on-chain, alongside an integrated arbitration
+  escrow.
+- **Multi-Chain Smart Contracts:** Soroban-based smart contract implementation
+  alongside a Foundry/Solidity implementation supporting ZK proof verification.
 
 ## 📂 Workspace Structure
 
-This is a Cargo workspace. Each directory under `contracts/` is an independent deployable Soroban WASM package.
+This is a Cargo workspace. Each directory under `contracts/` is an independent
+deployable Soroban WASM package.
 
 | Package             | Path                          | Description                                                                                                                                            |
 | ------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -20,7 +27,11 @@ This is a Cargo workspace. Each directory under `contracts/` is an independent d
 | `compliance`        | `contracts/compliance`        | Regulatory compliance screening layer — KYC/AML hooks, sanctions checks, and tax reporting utilities.                                                  |
 | `zk_kyc`            | `contracts/zk_kyc`            | Zero-knowledge proof verification for privacy-preserving identity and KYC attestations.                                                                |
 
-All packages share a single `soroban-sdk` version declared in the root `Cargo.toml` under `[workspace.dependencies]`. Individual crates reference it via `soroban-sdk = { workspace = true }`. To upgrade the SDK across the entire workspace, change the version in the root `Cargo.toml` only, then run `cargo update && cargo test --workspace`.
+All packages share a single `soroban-sdk` version declared in the root
+`Cargo.toml` under `[workspace.dependencies]`. Individual crates reference it
+via `soroban-sdk = { workspace = true }`. To upgrade the SDK across the entire
+workspace, change the version in the root `Cargo.toml` only, then run
+`cargo update && cargo test --workspace`.
 
 ## 🛠️ Tech Stack
 
@@ -58,4 +69,6 @@ forge test
 
 ## 🤝 Contributing
 
-Contributions are highly welcome. Please ensure your commits are cryptographically signed using GPG or SSH keys. For major structural changes, please open an issue first to discuss your proposal.
+Contributions are highly welcome. Please ensure your commits are
+cryptographically signed using GPG or SSH keys. For major structural changes,
+please open an issue first to discuss your proposal.
