@@ -23,7 +23,6 @@ app.use((_req, res) => {
 });
 
 // ── Global error handler ──────────────────────────────────────────────────────
-// eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   // Never leak stack traces to clients
   console.error("[error]", err.message);
