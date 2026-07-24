@@ -2,13 +2,19 @@
 
 ## Overview
 
-This document summarizes the comprehensive refactoring of contract storage keys to prevent key collisions and improve maintainability. The unified `StorageKey` enum organizes all storage access patterns into well-documented, namespaced categories.
+This document summarizes the comprehensive refactoring of contract storage keys
+to prevent key collisions and improve maintainability. The unified `StorageKey`
+enum organizes all storage access patterns into well-documented, namespaced
+categories.
 
 ## Problem Solved
 
-**Key Collisions**: Previously, different modules used separate storage key enums (`DataKey`, `CircuitBreakerKey`, `GovernanceDataKey`, etc.) which could potentially collide if they used similar underlying values or patterns.
+**Key Collisions**: Previously, different modules used separate storage key
+enums (`DataKey`, `CircuitBreakerKey`, `GovernanceDataKey`, etc.) which could
+potentially collide if they used similar underlying values or patterns.
 
 **Example Collision Risk**:
+
 ```rust
 // Before: Different modules, potential collision
 enum DataKey { Grant(u64), Admin }
@@ -24,24 +30,30 @@ enum GovernanceDataKey { Proposal(u64), Admin }
 ### Key Categories
 
 1. **Core Contract State** (`"core"`)
-   - `Admin`, `GrantToken`, `NativeToken`, `Treasury`, `Oracle`, `GrantIds`, `ContractInitialized`
+   - `Admin`, `GrantToken`, `NativeToken`, `Treasury`, `Oracle`, `GrantIds`,
+     `ContractInitialized`
 
 2. **Grant Management** (`"grant"`)
-   - `Grant(u64)`, `Milestone(u64, u32)`, `GrantStreamConfig(u64)`, `GrantLegalData(u64)`
+   - `Grant(u64)`, `Milestone(u64, u32)`, `GrantStreamConfig(u64)`,
+     `GrantLegalData(u64)`
    - `GrantValidatorData(u64)`, `GrantMetrics(u64)`, `GrantDisputeData(u64)`
 
 3. **User Data** (`"user"`)
-   - `RecipientGrants(Address)`, `UserBalance(Address)`, `UserPermissions(Address)`
-   - `UserVotingPower(Address)`, `UserTaxData(Address)`, `UserAuditTrail(Address)`
+   - `RecipientGrants(Address)`, `UserBalance(Address)`,
+     `UserPermissions(Address)`
+   - `UserVotingPower(Address)`, `UserTaxData(Address)`,
+     `UserAuditTrail(Address)`
 
 4. **Treasury & Yield** (`"treasury"`)
    - `TreasuryConfig`, `YieldPosition`, `YieldMetrics`, `ReserveBalance`
    - `YieldToken`, `YieldStrategy`, `HarvestSchedule`
 
 5. **Governance** (`"governance"`)
-   - `Proposal(u64)`, `Vote(Address, u64)`, `VotingPower(Address)`, `ProposalIds`
+   - `Proposal(u64)`, `Vote(Address, u64)`, `VotingPower(Address)`,
+     `ProposalIds`
    - `GovernanceToken`, `VotingThreshold`, `QuorumThreshold`, `CouncilMembers`
-   - `StakeToken`, `ProposalStakeAmount`, `OptimisticLimit`, `ChallengeBond`, `ConvictionAlpha`
+   - `StakeToken`, `ProposalStakeAmount`, `OptimisticLimit`, `ChallengeBond`,
+     `ConvictionAlpha`
 
 6. **Circuit Breakers** (`"circuit_breaker"`)
    - `LastOraclePrice`, `SanityOracle`, `OracleFrozen`, `TvlSnapshot`
@@ -55,20 +67,23 @@ enum GovernanceDataKey { Proposal(u64), Admin }
    - `TaxFlowHistory(Address)`, `ComplianceData`, `RegulatoryReport(u64)`
 
 8. **Multi-Token Operations** (`"multi_token"`)
-   - `WrappedAsset(Address)`, `BridgeConfig`, `CrossChainTx(u64)`, `TokenPriceFeed(Address)`
+   - `WrappedAsset(Address)`, `BridgeConfig`, `CrossChainTx(u64)`,
+     `TokenPriceFeed(Address)`
 
 9. **Emergency & Recovery** (`"emergency"`)
    - `EmergencySigners`, `RescueProposal(u64)`, `EmergencyExecutionLog(u64)`
    - `CircuitBreakerTrigger(u64)`
 
 10. **Reentrancy Protection** (`"security"`)
-    - `ReentrancyGuard`, `FunctionReentrancyLock(Bytes)`, `OperationTimeout(Bytes)`
+    - `ReentrancyGuard`, `FunctionReentrancyLock(Bytes)`,
+      `OperationTimeout(Bytes)`
 
 11. **Public Dashboard & Monitoring** (`"monitoring"`)
     - `LastHeartbeat`, `LastTvl`, `DashboardConfig`, `HealthMetrics`
 
 12. **Miscellaneous & Future Extensions** (`"misc"`)
-    - `ContractVersion`, `FeatureFlag(Bytes)`, `TemporaryData(Bytes)`, `MigrationStatus`
+    - `ContractVersion`, `FeatureFlag(Bytes)`, `TemporaryData(Bytes)`,
+      `MigrationStatus`
 
 ## Implementation Details
 
@@ -111,6 +126,7 @@ type DataKey = StorageKey;                          // yield_treasury.rs
 ### Collision Prevention Examples
 
 **Before (Risk)**:
+
 ```rust
 // Different modules could collide
 DataKey::Grant(1)           // Storage slot A
@@ -118,6 +134,7 @@ GovernanceDataKey::Proposal(1)  // Could also use slot A
 ```
 
 **After (Safe)**:
+
 ```rust
 // Namespaced keys prevent collisions
 StorageKey::Grant(1)       // "grant" namespace
@@ -132,8 +149,10 @@ StorageKey::Proposal(1)    // "governance" namespace
 1. **Namespace Validation**: Ensures all keys have correct namespaces
 2. **Documentation Coverage**: Validates all keys have meaningful descriptions
 3. **Collision Prevention**: Tests that different key types cannot collide
-4. **Parameterized Variants**: Validates complex keys with parameters work correctly
-5. **Common Collision Patterns**: Tests specific scenarios that caused issues before
+4. **Parameterized Variants**: Validates complex keys with parameters work
+   correctly
+5. **Common Collision Patterns**: Tests specific scenarios that caused issues
+   before
 
 ### Test Coverage Areas
 
@@ -155,16 +174,20 @@ StorageKey::Proposal(1)    // "governance" namespace
 ## Migration Path
 
 ### Phase 1: ✅ Complete
+
 - Create unified `StorageKey` enum
 - Add legacy type aliases
-- Update core modules (lib.rs, circuit_breakers.rs, governance.rs, yield_treasury.rs)
+- Update core modules (lib.rs, circuit_breakers.rs, governance.rs,
+  yield_treasury.rs)
 
 ### Phase 2: Future Work
+
 - Update remaining modules (multi_threshold.rs, audit_log.rs, etc.)
 - Remove legacy type aliases after full migration
 - Add runtime validation for storage access patterns
 
 ### Phase 3: Long-term
+
 - Consider storage access pattern analysis tools
 - Add storage usage metrics and optimization
 - Implement storage migration utilities
@@ -173,10 +196,13 @@ StorageKey::Proposal(1)    // "governance" namespace
 
 This refactoring significantly improves contract security by:
 
-1. **Preventing State Corruption**: Eliminates key collisions that could overwrite critical data
-2. **Clear Separation of Concerns**: Different modules cannot accidentally interfere with each other's storage
+1. **Preventing State Corruption**: Eliminates key collisions that could
+   overwrite critical data
+2. **Clear Separation of Concerns**: Different modules cannot accidentally
+   interfere with each other's storage
 3. **Auditability**: Clear documentation makes security audits easier
-4. **Future Safety**: New developers cannot accidentally introduce collision risks
+4. **Future Safety**: New developers cannot accidentally introduce collision
+   risks
 
 ## Performance Impact
 
@@ -186,9 +212,13 @@ This refactoring significantly improves contract security by:
 
 ## Conclusion
 
-The unified storage key organization successfully eliminates key collision risks while maintaining backward compatibility and improving code maintainability. The comprehensive documentation and testing ensure this refactoring provides a solid foundation for future contract development.
+The unified storage key organization successfully eliminates key collision risks
+while maintaining backward compatibility and improving code maintainability. The
+comprehensive documentation and testing ensure this refactoring provides a solid
+foundation for future contract development.
 
 ### Key Metrics
+
 - **Storage Key Categories**: 12 well-organized namespaces
 - **Total Storage Keys**: 80+ unified keys
 - **Collision Risk**: Eliminated (0% chance)

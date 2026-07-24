@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
+license = "MIT"
 
 # Workspace members — each maps to a deployable Soroban WASM contract.
 #

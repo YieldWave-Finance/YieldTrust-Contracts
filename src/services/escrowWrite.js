@@ -1,12 +1,12 @@
-"use strict";
+'use strict';
 
-const { onChainAdapter } = require("../adapters/onChainAdapter");
-const { validateEscrowId } = require("./escrowRead");
+const { onChainAdapter } = require('../adapters/onChainAdapter');
+const { validateEscrowId } = require('./escrowRead');
 
 async function fundEscrow(escrowId, amount) {
   validateEscrowId(escrowId);
-  if (typeof amount !== "string" || amount.length === 0) {
-    const err = new Error("Invalid amount");
+  if (typeof amount !== 'string' || amount.length === 0) {
+    const err = new Error('Invalid amount');
     err.statusCode = 400;
     throw err;
   }
@@ -14,13 +14,13 @@ async function fundEscrow(escrowId, amount) {
     await onChainAdapter.fundEscrow(escrowId, amount);
   } catch (err) {
     if (err.statusCode) throw err;
-    const wrapped = new Error("Failed to initiate funding");
+    const wrapped = new Error('Failed to initiate funding');
     wrapped.statusCode = 502;
     throw wrapped;
   }
   return {
-    status:    "pending",
-    message:   "Funding initiated",
+    status: 'pending',
+    message: 'Funding initiated',
     escrow_id: escrowId,
     amount,
   };
@@ -32,21 +32,21 @@ async function releaseEscrow(escrowId) {
     await onChainAdapter.releaseEscrow(escrowId);
   } catch (err) {
     if (err.statusCode) throw err;
-    const wrapped = new Error("Failed to initiate release");
+    const wrapped = new Error('Failed to initiate release');
     wrapped.statusCode = 502;
     throw wrapped;
   }
   return {
-    status:    "pending",
-    message:   "Release initiated",
+    status: 'pending',
+    message: 'Release initiated',
     escrow_id: escrowId,
   };
 }
 
 async function withdrawFromEscrow(escrowId, amount) {
   validateEscrowId(escrowId);
-  if (amount !== undefined && (typeof amount !== "string" || amount.length === 0)) {
-    const err = new Error("Invalid amount");
+  if (amount !== undefined && (typeof amount !== 'string' || amount.length === 0)) {
+    const err = new Error('Invalid amount');
     err.statusCode = 400;
     throw err;
   }
@@ -54,13 +54,13 @@ async function withdrawFromEscrow(escrowId, amount) {
     await onChainAdapter.withdrawFromEscrow(escrowId, amount);
   } catch (err) {
     if (err.statusCode) throw err;
-    const wrapped = new Error("Failed to initiate withdrawal");
+    const wrapped = new Error('Failed to initiate withdrawal');
     wrapped.statusCode = 502;
     throw wrapped;
   }
   return {
-    status:    "pending",
-    message:   "Withdrawal initiated",
+    status: 'pending',
+    message: 'Withdrawal initiated',
     escrow_id: escrowId,
     ...(amount !== undefined && { amount }),
   };

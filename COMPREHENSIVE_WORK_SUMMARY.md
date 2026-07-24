@@ -1,7 +1,9 @@
 # Grant Stream Contracts - Comprehensive Work Summary
 
 > **Last Updated**: April 2026  
-> A complete institutional-grade smart contract system for managing grant streams with milestone verification, dispute resolution, compliance, and yield optimization.
+> A complete institutional-grade smart contract system for managing grant
+> streams with milestone verification, dispute resolution, compliance, and yield
+> optimization.
 
 ## Table of Contents
 
@@ -18,18 +20,24 @@
 
 ## Project Overview
 
-Grant Stream Contracts is a sophisticated, multi-chain smart contract system designed for institutional-grade grant management. The project supports two parallel implementations:
+Grant Stream Contracts is a sophisticated, multi-chain smart contract system
+designed for institutional-grade grant management. The project supports two
+parallel implementations:
 
-- **Soroban/Stellar**: High-precision per-second streaming with legal anchoring and cross-chain interoperability
-- **Solidity/Ethereum+L2s**: Milestone-based releasing with integrated dispute resolution and zero-knowledge proofs
+- **Soroban/Stellar**: High-precision per-second streaming with legal anchoring
+  and cross-chain interoperability
+- **Solidity/Ethereum+L2s**: Milestone-based releasing with integrated dispute
+  resolution and zero-knowledge proofs
 
 ### Key Objectives
 
 ✅ **Transparency**: Full on-chain visibility and immutable audit trails  
-✅ **Security**: Multi-layered security controls, circuit breakers, and emergency mechanisms  
+✅ **Security**: Multi-layered security controls, circuit breakers, and
+emergency mechanisms  
 ✅ **Compliance**: Regulatory oversight capabilities and sanctions detection  
-✅ **Efficiency**: Yield optimization, bit-packing optimizations, and gas efficiency  
-✅ **Autonomy**: Grantee control with self-termination capabilities  
+✅ **Efficiency**: Yield optimization, bit-packing optimizations, and gas
+efficiency  
+✅ **Autonomy**: Grantee control with self-termination capabilities
 
 ---
 
@@ -37,16 +45,24 @@ Grant Stream Contracts is a sophisticated, multi-chain smart contract system des
 
 ### 1. Soroban Implementation (Stellar)
 
-**Location**: `contracts/grant_stream/`, `contracts/grant_multisig/`, `contracts/admin/`
+**Location**: `contracts/grant_stream/`, `contracts/grant_multisig/`,
+`contracts/admin/`
 
 #### Core Features
-- **Per-Second Accrual**: Ultra-high precision streaming with adjustable flow rates
-- **Legal Anchoring**: Prevent fund streaming until legal documents are cryptographically signed on-chain
-- **Cross-Chain Interoperability**: Compact byte-array status emission for bridge monitoring
-- **Multi-Signature Support**: Threshold-signature approval for sensitive operations
-- **Yield Integration**: Support for automatic yield-bearing treasury integration
+
+- **Per-Second Accrual**: Ultra-high precision streaming with adjustable flow
+  rates
+- **Legal Anchoring**: Prevent fund streaming until legal documents are
+  cryptographically signed on-chain
+- **Cross-Chain Interoperability**: Compact byte-array status emission for
+  bridge monitoring
+- **Multi-Signature Support**: Threshold-signature approval for sensitive
+  operations
+- **Yield Integration**: Support for automatic yield-bearing treasury
+  integration
 
 #### Key Modules
+
 - `grant_stream`: Core streaming logic with precision handling
 - `grant_multisig`: Multi-signature governance and approvals
 - `admin`: Dead man's switch, governance monitoring, and admin controls
@@ -56,13 +72,17 @@ Grant Stream Contracts is a sophisticated, multi-chain smart contract system des
 **Location**: `contracts/`, `foundry/`, `script/`
 
 #### Core Features
-- **Arbitration Escrow**: Secure fund holding during disputes with third-party arbitrators
-- **ZK Proof Verification**: Anonymous verification of grant conditions without revealing sensitive details
+
+- **Arbitration Escrow**: Secure fund holding during disputes with third-party
+  arbitrators
+- **ZK Proof Verification**: Anonymous verification of grant conditions without
+  revealing sensitive details
 - **Milestone Hashing**: SHA-256 proof submission for deliverables
 - **Dynamic Fee Management**: Adjustable fee structures
 - **Veto Periods**: Governance-controlled transaction delays for security
 
 #### Smart Contracts
+
 - `GrantStream.sol`: Main streaming contract with milestone support
 - `DynamicFee.sol`: Flexible fee calculation
 - `VetoPeriod.sol`: Governance-controlled delays
@@ -77,10 +97,13 @@ Grant Stream Contracts is a sophisticated, multi-chain smart contract system des
 ### Phase 1: Foundation & Core Functionality
 
 #### ✅ Pre-Flight Dry-Run Deployment Script
+
 **File**: `scripts/preflight-dryrun.sh`  
-**Purpose**: Comprehensive testing on local Mainnet fork before production deployment
+**Purpose**: Comprehensive testing on local Mainnet fork before production
+deployment
 
 **Capabilities**:
+
 - Automatic Anvil fork startup with mainnet state
 - Simulates 100 claims to test gas optimization and edge cases
 - Simulates 10 revocations/admin changes to verify access control
@@ -90,6 +113,7 @@ Grant Stream Contracts is a sophisticated, multi-chain smart contract system des
 - Automatic Anvil cleanup on exit
 
 **Usage**:
+
 ```bash
 export PRIVATE_KEY=0x...
 export GRANT_RECIPIENT_ADDRESS=0x...
@@ -101,10 +125,12 @@ export GRANT_RECIPIENT_ADDRESS=0x...
 ### Phase 2: Governance & Control Features
 
 #### ✅ Final Release Flag (Community Handshake)
+
 **File**: `contracts/GrantStream.sol`  
 **Purpose**: Require community governance approval for final 10% of grants
 
 **Implementation Details**:
+
 - `finalReleaseRequired` flag: Enables last 10% lockup
 - `finalReleaseApproved` flag: Community approval status
 - `endDate` parameter: Grant stream end date
@@ -113,36 +139,45 @@ export GRANT_RECIPIENT_ADDRESS=0x...
 - Fully backward-compatible with existing grants
 
 **Benefits**:
+
 - Ensures founders remain engaged until project launch
 - Protects long-term value for all stakeholders
 - Prevents "Rug-at-the-Finish-Line" exploits
 - Maintains "Skin in the Game" incentives
 
 #### ✅ Mass Milestone Dispute Circuit Breaker
+
 **File**: `contracts/grant_stream/src/circuit_breakers.rs`  
 **Purpose**: Protect DAO treasury from Sybil-Dispute attacks
 
 **Protection Mechanism**:
-- Monitors dispute spike: If >15% of active grants enter dispute status within 24 hours, circuit breaker activates
+
+- Monitors dispute spike: If >15% of active grants enter dispute status within
+  24 hours, circuit breaker activates
 - Halts new grant initialization to prevent coordinated attacks
 - Admin-controlled override for manual recovery
 - Transparent monitoring statistics available on-chain
 
 **Constants**:
+
 - `DISPUTE_WINDOW_SECS`: 24 hours (86,400 seconds)
 - `DISPUTE_THRESHOLD_BPS`: 15% (1,500 basis points)
 
 **Functions**:
+
 - `record_dispute()`: Record dispute and check threshold
 - `is_grant_initialization_halted()`: Check circuit breaker status
 - `resume_grant_initialization()`: Admin reset function
 - `get_dispute_monitoring_stats()`: Transparency endpoint
 
 #### ✅ Self-Termination Feature
+
 **File**: `contracts/grant_stream/src/`, `SELF_TERMINATE_FEATURE.md`  
-**Purpose**: Allow grantees to gracefully terminate grants and reclaim unspent funds
+**Purpose**: Allow grantees to gracefully terminate grants and reclaim unspent
+funds
 
 **Core Capabilities**:
+
 - Grantees can unilaterally terminate their own grants
 - Final balance is settled to grantee immediately
 - Unspent portions automatically refunded to admin/DAO
@@ -150,11 +185,13 @@ export GRANT_RECIPIENT_ADDRESS=0x...
 - Full audit trail via events
 
 **Status Flag**:
+
 ```rust
 pub const STATUS_SELF_TERMINATED: u32 = 0b100000000;
 ```
 
 **Result Structure**:
+
 ```rust
 pub struct SelfTerminateResult {
     pub grant_id: u64,
@@ -170,15 +207,19 @@ pub struct SelfTerminateResult {
 ### Phase 3: Privacy & Zero-Knowledge Proofs
 
 #### ✅ ZK-Proof Privacy-Preserving Milestone Verification
+
 **File**: `contracts/GrantStream.sol`, enhanced contracts  
-**Purpose**: Enable private verification of grant conditions without revealing sensitive details
+**Purpose**: Enable private verification of grant conditions without revealing
+sensitive details
 
 **Architecture**:
+
 - Zero-knowledge SNARK verification framework
 - Proof and public input validation
 - "Dark Pool" grant management for sensitive IP
 
 **Features**:
+
 - `nullifiers` mapping: Prevents double-spending
 - `commitments` mapping: Stores ZK-SNARK commitments
 - `merkleRoot`: For Merkle tree integration
@@ -187,34 +228,42 @@ pub struct SelfTerminateResult {
 - `claimWithZKProof()`: Privacy-preserving claim function
 
 **Use Cases**:
-- Security researchers proving vulnerability findings without revealing exploit details
+
+- Security researchers proving vulnerability findings without revealing exploit
+  details
 - Anonymous builders on sensitive infrastructure projects
 - Privacy-conscious developers maintaining confidentiality
 - Future zk-KYC integration (prove eligibility without identity disclosure)
 
 **Events**:
+
 - `CommitmentAdded`
 - `NullifierUsed`
 - `MerkleRootUpdated`
 - `ZKProofEnabledToggled`
 
 #### ✅ Threshold-Signature Approval for Milestone Payouts
+
 **File**: `contracts/grant_stream/src/`  
-**Purpose**: Require collective multi-signature approval for sensitive milestone releases
+**Purpose**: Require collective multi-signature approval for sensitive milestone
+releases
 
 **Implementation**:
+
 - Threshold Signature Scheme (TSS) verification
 - Signer management and threshold configuration
 - Bitmask-based signer verification (gas-efficient)
 - `verify_tss_approval()` function for cryptographic verification
 
 **Benefits**:
+
 - Removes single points of failure
 - More gas-efficient than individual signature checks
 - Resilient to individual key compromises
 - Support for redundant signer sets with threshold design
 
 **Functions**:
+
 - `add_signer()`: Register new signer
 - `set_threshold()`: Configure approval threshold
 - `verify_tss_approval()`: Verify multi-signature approval
@@ -224,10 +273,14 @@ pub struct SelfTerminateResult {
 ### Phase 4: Compliance & Regulatory
 
 #### ✅ On-Chain Compliance Officer Implementation
-**File**: `contracts/ComplianceOfficer.sol`, `contracts/IComplianceOfficer.sol`  
-**Purpose**: Enable regulated institutions to participate while maintaining regulatory oversight
+
+**File**: `contracts/ComplianceOfficer.sol`,
+`contracts/IComplianceOfficer.sol`  
+**Purpose**: Enable regulated institutions to participate while maintaining
+regulatory oversight
 
 **Compliance Officer Capabilities**:
+
 - ✅ Pause grant streams for sanctions matches or suspicious activity
 - ✅ Flag addresses for ongoing monitoring
 - ✅ Read complete visibility into grants and transactions
@@ -235,6 +288,7 @@ pub struct SelfTerminateResult {
 - ✅ Unflag addresses when issues are resolved
 
 **Compliance Officer Restrictions**:
+
 - ❌ Cannot redirect or steal funds
 - ❌ Cannot modify grant parameters
 - ❌ Cannot access treasury funds
@@ -242,18 +296,23 @@ pub struct SelfTerminateResult {
 - ❌ Cannot bypass security controls
 
 **Architecture**:
+
 - `ComplianceOfficer.sol`: Main compliance contract
 - `SanctionsDetector.sol`: Automated suspicious pattern detection
 - `IComplianceOfficer.sol`: Interface for compliance operations
 
 **Reason Codes**:
+
 - `1`: Sanctions Match
 - `2`: Suspicious Activity
 - `3`: Regulatory Review
 
 **Security Features**:
-- **Access Control**: Clear role separation (Owner, Compliance Officer, Treasury, Verifier)
-- **Time-Based Protection**: Minimum 1-hour unpause delay, 30-day maximum pause duration
+
+- **Access Control**: Clear role separation (Owner, Compliance Officer,
+  Treasury, Verifier)
+- **Time-Based Protection**: Minimum 1-hour unpause delay, 30-day maximum pause
+  duration
 - **Rate Limiting**: Prevents rapid successive actions
 - **Audit Trail**: Complete event logging for all compliance actions
 
@@ -262,26 +321,31 @@ pub struct SelfTerminateResult {
 ### Phase 5: Yield Optimization
 
 #### ✅ Yield-Bearing Treasury Integration
+
 **File**: `contracts/`, `YIELD_TREASURY_INTEGRATION.md`  
 **Purpose**: Put idle funds to work while maintaining liquidity for withdrawals
 
 **Core Components**:
+
 - `YieldTreasuryContract`: Standalone yield management
 - `YieldEnhancedGrantContract`: Integrated grant + yield functionality
 
 **Investment Strategies**:
-| Strategy | APY | Risk Level |
-|----------|-----|-----------|
-| STELLAR_AQUA | 8% | Medium |
-| STELLAR_USDC | 5% | Low |
-| LIQUIDITY_POOL | 12% | High |
+
+| Strategy       | APY | Risk Level |
+| -------------- | --- | ---------- |
+| STELLAR_AQUA   | 8%  | Medium     |
+| STELLAR_USDC   | 5%  | Low        |
+| LIQUIDITY_POOL | 12% | High       |
 
 **Liquidity Protection Mechanisms**:
+
 - Configurable minimum reserve ratio
 - Auto-divestment when withdrawal liquidity is needed
 - Emergency withdrawal bypass
 
 **Core Functions**:
+
 - `invest_idle_funds()`: Invest idle capital
 - `divest_funds()`: Withdraw from yield strategies
 - `get_yield_position()`: Query yield position
@@ -294,15 +358,18 @@ pub struct SelfTerminateResult {
 ### Phase 6: Storage & Gas Optimization
 
 #### ✅ Bit-Packed Grant Status Optimization
+
 **File**: `BITPACK_OPTIMIZATION.md`  
 **Purpose**: Reduce storage costs and improve gas efficiency
 
 **Problem Solved**:
+
 - Replaced multiple boolean fields with single u32 status mask
 - Reduced storage entries per grant significantly
 - Improved gas efficiency for state transitions
 
 **Status Flags**:
+
 ```rust
 pub const STATUS_ACTIVE: u32 = 0b00000001;
 pub const STATUS_PAUSED: u32 = 0b00000010;
@@ -316,26 +383,31 @@ pub const STATUS_SELF_TERMINATED: u32 = 0b100000000;
 ```
 
 **Helper Functions**:
+
 - `has_status()`: Check if flag is set
 - `set_status()`: Set a flag
 - `clear_status()`: Clear a flag
 - `toggle_status()`: Toggle a flag
 
 #### ✅ Flash-Accounting Snapshot for Liquidity Providers
+
 **File**: `IMPLEMENTATION_SUMMARY_ENHANCED.md`  
 **Purpose**: Efficiently calculate share distributions in yield pools
 
 **Implementation**:
+
 - Global exchange rate tracking with snapshots
 - `start_rate` field in Grant struct
 - O(1) withdrawal performance (vs O(n) loops)
 - Accurate yield distribution based on grant start times
 
 **Storage Keys Added**:
+
 - `GlobalExchangeRate`: Current exchange rate
 - `TotalPoolBalance`: Total pool balance
 
 **Benefits**:
+
 - O(1) instead of O(n) withdrawal calculations
 - Accurate per-grantee yield accounting
 - Efficient for pools with hundreds of grantees
@@ -345,30 +417,38 @@ pub const STATUS_SELF_TERMINATED: u32 = 0b100000000;
 ### Phase 7: Multi-Token & Cross-Chain Features
 
 #### ✅ Auto-Swap Integration for Diversified Withdrawals
+
 **File**: `IMPLEMENTATION_SUMMARY_ENHANCED.md`  
-**Purpose**: Allow grantees to withdraw grant tokens automatically swapped to stablecoins
+**Purpose**: Allow grantees to withdraw grant tokens automatically swapped to
+stablecoins
 
 **Implementation**:
+
 - `withdraw_as_stable()` function with automatic DEX swap
 - Integration with Stellar Asset Contracts (SAC)
 - `path_payment_strict_receive` for DEX operations
 - Stablecoin address configuration
 
 **Benefits**:
+
 - Grantees avoid token volatility risk
 - Direct stablecoin access for operational simplicity
 - Slippage protection with minimum output parameters
 
 **Usage**:
+
 ```rust
 client.withdraw_as_stable(&recipient, &grant_id, &amount, &min_stable_out);
 ```
 
 #### ✅ Stellar Metadata Monitoring System
-**File**: `contracts/StellarMetadataMonitor.sol`, `scripts/stellar-metadata-worker.js`  
+
+**File**: `contracts/StellarMetadataMonitor.sol`,
+`scripts/stellar-metadata-worker.js`  
 **Purpose**: Track Stellar asset metadata changes across long-term grant cycles
 
 **Smart Contract Features**:
+
 - `registerAsset()`: Register assets for monitoring
 - `reportMetadataChange()`: Report detected changes
 - `processMetadataChange()`: Approve and apply changes
@@ -377,6 +457,7 @@ client.withdraw_as_stable(&recipient, &grant_id, &amount, &min_stable_out);
 - `getPendingChangeRequests()`: View pending changes
 
 **Data Structure**:
+
 ```solidity
 struct AssetMetadata {
     string assetCode;      // e.g., "USD", "BTC"
@@ -389,11 +470,13 @@ struct AssetMetadata {
 ```
 
 **Monitoring Worker**:
+
 - `stellar-metadata-worker.js`: Node.js worker for metadata tracking
 - Automated change detection
 - Dashboard integration via events
 
 **Events**:
+
 - `MetadataUpdate`: Triggers dashboard updates
 - `MetadataChangeRequested`: New change request
 - `MetadataChangeProcessed`: Change approved
@@ -453,7 +536,8 @@ foundry/
 
 ### Security Layers
 
-1. **Access Control**: Role-based permissions (Admin, Compliance Officer, Grantee, Oracle)
+1. **Access Control**: Role-based permissions (Admin, Compliance Officer,
+   Grantee, Oracle)
 2. **Circuit Breakers**: Automatic protection against coordinated attacks
 3. **Time-Locks**: Delays on sensitive operations
 4. **Emergency Mechanisms**: Quick pause/resume capabilities
@@ -473,6 +557,7 @@ foundry/
 **Documented in**: `SECURITY_MODEL.md`
 
 Key threats addressed:
+
 - Admin key compromise (multi-sig mitigation)
 - Malicious admin action (two-person review)
 - Sybil-Dispute attacks (circuit breaker)
@@ -484,16 +569,19 @@ Key threats addressed:
 ## Testing & Validation
 
 ### ✅ Rounding Error Fuzz Testing
+
 **File**: `test_rounding_fuzz.rs`, `ROUNDING_FUZZ_SUMMARY.md`  
 **Purpose**: Mathematically prove rounding errors don't accumulate into deficits
 
 **Test Coverage**:
+
 - **Micro-Stream Fuzz**: 5,000 concurrent streams at 100 stroops/day
 - **Duration**: Up to 365 days
 - **Scenarios**: 50+ randomized property-based tests
 - **Error Bound**: Max 864 stroops per stream, 4.32 XLM system total
 
 **Validation Results**:
+
 - ✅ Test structure and functions
 - ✅ Constants and mathematical bounds
 - ✅ Proptest fuzz framework
@@ -501,6 +589,7 @@ Key threats addressed:
 - ✅ Integration with test suite
 
 **Running Tests**:
+
 ```bash
 cargo test test_rounding_fuzz --lib
 
@@ -645,17 +734,19 @@ Grant-Stream-Contracts/
 ### Getting Started
 
 1. **Install Dependencies**
+
    ```bash
    # Rust & Soroban
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
    cargo install stellar-cli
-   
+
    # Foundry (for Solidity)
    curl -L https://foundry.paradigm.xyz | bash
    foundryup
    ```
 
 2. **Clone Repository**
+
    ```bash
    git clone <repository-url>
    cd Grant-Stream-Contracts
@@ -663,11 +754,12 @@ Grant-Stream-Contracts/
    ```
 
 3. **Build and Test**
+
    ```bash
    # Soroban tests
    cd contracts/grant_stream
    cargo test
-   
+
    # Solidity tests
    cd ../../foundry
    forge test
@@ -691,16 +783,20 @@ Grant-Stream-Contracts/
 ## Key Metrics & Impact
 
 ### Efficiency Gains
+
 - **Storage**: 60% reduction via bit-packing optimization
 - **Gas**: O(1) yield calculations vs O(n) iterations
 - **Processing**: Parallel multi-signature verification
 
 ### Security Coverage
-- **9 major security mechanisms** (circuit breakers, time-locks, multi-sig, etc.)
+
+- **9 major security mechanisms** (circuit breakers, time-locks, multi-sig,
+  etc.)
 - **Complete audit trail** via event logging
 - **Zero rounding protocol deficits** (mathematically proven)
 
 ### Institutional Readiness
+
 - ✅ Compliance officer implementation
 - ✅ Regulatory framework support
 - ✅ Audit trail requirements
@@ -711,25 +807,26 @@ Grant-Stream-Contracts/
 
 ## Documentation Index
 
-| Document | Purpose |
-|----------|---------|
-| [README.md](README.md) | Project overview |
-| [SECURITY_MODEL.md](SECURITY_MODEL.md) | Threat model and security assumptions |
-| [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md) | Task completion status |
-| [IMPLEMENTATION_SUMMARY_ENHANCED.md](IMPLEMENTATION_SUMMARY_ENHANCED.md) | Enhanced features (auto-swap, yield, ZK, TSS) |
-| [BITPACK_OPTIMIZATION.md](BITPACK_OPTIMIZATION.md) | Storage optimization techniques |
-| [SELF_TERMINATE_FEATURE.md](SELF_TERMINATE_FEATURE.md) | Grantee autonomy features |
-| [YIELD_TREASURY_INTEGRATION.md](YIELD_TREASURY_INTEGRATION.md) | Yield farming integration |
-| [ROUNDING_FUZZ_SUMMARY.md](ROUNDING_FUZZ_SUMMARY.md) | Fuzz testing and rounding analysis |
-| [README_COMPLIANCE.md](README_COMPLIANCE.md) | Compliance officer implementation |
-| [DISPUTE_CIRCUIT_BREAKER_IMPLEMENTATION.md](DISPUTE_CIRCUIT_BREAKER_IMPLEMENTATION.md) | Circuit breaker for Sybil protection |
-| [docs/STELLAR_METADATA_MONITOR.md](docs/STELLAR_METADATA_MONITOR.md) | Cross-chain metadata tracking |
+| Document                                                                               | Purpose                                       |
+| -------------------------------------------------------------------------------------- | --------------------------------------------- |
+| [README.md](README.md)                                                                 | Project overview                              |
+| [SECURITY_MODEL.md](SECURITY_MODEL.md)                                                 | Threat model and security assumptions         |
+| [IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)                                 | Task completion status                        |
+| [IMPLEMENTATION_SUMMARY_ENHANCED.md](IMPLEMENTATION_SUMMARY_ENHANCED.md)               | Enhanced features (auto-swap, yield, ZK, TSS) |
+| [BITPACK_OPTIMIZATION.md](BITPACK_OPTIMIZATION.md)                                     | Storage optimization techniques               |
+| [SELF_TERMINATE_FEATURE.md](SELF_TERMINATE_FEATURE.md)                                 | Grantee autonomy features                     |
+| [YIELD_TREASURY_INTEGRATION.md](YIELD_TREASURY_INTEGRATION.md)                         | Yield farming integration                     |
+| [ROUNDING_FUZZ_SUMMARY.md](ROUNDING_FUZZ_SUMMARY.md)                                   | Fuzz testing and rounding analysis            |
+| [README_COMPLIANCE.md](README_COMPLIANCE.md)                                           | Compliance officer implementation             |
+| [DISPUTE_CIRCUIT_BREAKER_IMPLEMENTATION.md](DISPUTE_CIRCUIT_BREAKER_IMPLEMENTATION.md) | Circuit breaker for Sybil protection          |
+| [docs/STELLAR_METADATA_MONITOR.md](docs/STELLAR_METADATA_MONITOR.md)                   | Cross-chain metadata tracking                 |
 
 ---
 
 ## Support & Contact
 
 For questions or issues:
+
 1. Check the relevant documentation file (see index above)
 2. Review existing test cases in `test/` and `foundry/test/`
 3. Check security model for threat-specific guidance
@@ -742,4 +839,5 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Project Status**: ✅ **Production Ready** with comprehensive testing, security review, and institutional-grade compliance features.
+**Project Status**: ✅ **Production Ready** with comprehensive testing, security
+review, and institutional-grade compliance features.
