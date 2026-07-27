@@ -2,10 +2,10 @@
 
 ## Claim
 
-The fixed-point scaling factor `SCALING_FACTOR = 10_000_000` (1 × 10⁷) used
-for flow rates in the Grant Stream contract provides sufficient precision to
-handle a 10-year grant without losing more than **0.000001 %** of the total
-grant value to rounding.
+The fixed-point scaling factor `SCALING_FACTOR = 10_000_000` (1 × 10⁷) used for
+flow rates in the Grant Stream contract provides sufficient precision to handle
+a 10-year grant without losing more than **0.000001 %** of the total grant value
+to rounding.
 
 ---
 
@@ -13,18 +13,17 @@ grant value to rounding.
 
 ### Grant parameters (worst-case scenario)
 
-| Parameter | Value | Rationale |
-|-----------|-------|-----------|
-| Grant duration | 10 years | As specified in the issue |
-| Duration in seconds | `315_360_000 s` | 10 × 365.25 × 24 × 3600 |
-| Total amount | `10^15` stroops | ~10^8 XLM — an extremely large institutional grant |
-| `SCALING_FACTOR` | `10_000_000` (1e7) | Constant in `lib.rs` |
+| Parameter           | Value              | Rationale                                          |
+| ------------------- | ------------------ | -------------------------------------------------- |
+| Grant duration      | 10 years           | As specified in the issue                          |
+| Duration in seconds | `315_360_000 s`    | 10 × 365.25 × 24 × 3600                            |
+| Total amount        | `10^15` stroops    | ~10^8 XLM — an extremely large institutional grant |
+| `SCALING_FACTOR`    | `10_000_000` (1e7) | Constant in `lib.rs`                               |
 
 ### Flow-rate encoding
 
-The contract stores `flow_rate` as **stroops per second × SCALING_FACTOR**.
-For a grant of `T` stroops over `D` seconds the ideal (real-valued) flow rate
-is:
+The contract stores `flow_rate` as **stroops per second × SCALING_FACTOR**. For
+a grant of `T` stroops over `D` seconds the ideal (real-valued) flow rate is:
 
 ```
 r_ideal = T / D   (stroops/second, real-valued)
@@ -114,7 +113,7 @@ T ≥ 3_153_600_000  stroops  ≈  315.36 XLM
 ```
 
 Any grant larger than ~315 XLM over 10 years satisfies the precision
-requirement.  Grants smaller than this are unlikely in an institutional context,
+requirement. Grants smaller than this are unlikely in an institutional context,
 and even for them the absolute loss is at most 32 stroops — negligible in
 practice.
 
@@ -131,17 +130,17 @@ let accrued = base_accrued
     .checked_div(10000)?;
 ```
 
-The additional division by `10000` (warmup multiplier denominator) introduces
-at most **1 stroop per `settle_grant` call**.  Over the lifetime of a grant
-with one settlement per second (extreme upper bound) this adds at most
-`D = 315_360_000` stroops ≈ 31.5 XLM.  For a grant of `T ≥ 10^15` stroops
-this is still `< 10^{-7}` of total value — well within the threshold.
+The additional division by `10000` (warmup multiplier denominator) introduces at
+most **1 stroop per `settle_grant` call**. Over the lifetime of a grant with one
+settlement per second (extreme upper bound) this adds at most `D = 315_360_000`
+stroops ≈ 31.5 XLM. For a grant of `T ≥ 10^15` stroops this is still `< 10^{-7}`
+of total value — well within the threshold.
 
 ---
 
 ## Conclusion
 
 `SCALING_FACTOR = 1e7` provides **at least 7 decimal digits of sub-stroop
-precision** in the flow rate.  For any realistic institutional grant (≥ 315 XLM
+precision** in the flow rate. For any realistic institutional grant (≥ 315 XLM
 over 10 years) the total rounding loss is provably less than **0.000001 %** of
 the grant value, satisfying the Institutional Assurance requirement.

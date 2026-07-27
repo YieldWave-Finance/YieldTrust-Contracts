@@ -27,16 +27,16 @@ function validateEscrowId(id) {
  * @throws {Error} with `statusCode = 502` if malformed.
  */
 function validateRawPayload(raw) {
-  if (!raw || typeof raw !== "object") {
-    const err = new Error("Escrow not found");
+  if (!raw || typeof raw !== 'object') {
+    const err = new Error('Escrow not found');
     err.statusCode = 404;
     throw err;
   }
 
   // Validate `balance` — must be a non-negative numeric string when present
   if (raw.balance !== undefined && raw.balance !== null) {
-    if (typeof raw.balance !== "string" || !BALANCE_RE.test(raw.balance)) {
-      const err = new Error("Malformed escrow balance: expected numeric string");
+    if (typeof raw.balance !== 'string' || !BALANCE_RE.test(raw.balance)) {
+      const err = new Error('Malformed escrow balance: expected numeric string');
       err.statusCode = 502;
       throw err;
     }
@@ -44,8 +44,8 @@ function validateRawPayload(raw) {
 
   // Validate `recipient` — must be a valid address when present
   if (raw.recipient !== undefined && raw.recipient !== null) {
-    if (typeof raw.recipient !== "string" || !ADDRESS_RE.test(raw.recipient)) {
-      const err = new Error("Malformed escrow recipient: expected valid address");
+    if (typeof raw.recipient !== 'string' || !ADDRESS_RE.test(raw.recipient)) {
+      const err = new Error('Malformed escrow recipient: expected valid address');
       err.statusCode = 502;
       throw err;
     }
@@ -53,8 +53,8 @@ function validateRawPayload(raw) {
 
   // Validate `status` — must be a non-empty string when present
   if (raw.status !== undefined && raw.status !== null) {
-    if (typeof raw.status !== "string" || raw.status.length === 0) {
-      const err = new Error("Malformed escrow status: expected non-empty string");
+    if (typeof raw.status !== 'string' || raw.status.length === 0) {
+      const err = new Error('Malformed escrow status: expected non-empty string');
       err.statusCode = 502;
       throw err;
     }
@@ -62,8 +62,8 @@ function validateRawPayload(raw) {
 
   // Validate `legal_hold` — must be a boolean when present
   if (raw.legal_hold !== undefined && raw.legal_hold !== null) {
-    if (typeof raw.legal_hold !== "boolean") {
-      const err = new Error("Malformed legal_hold: expected boolean");
+    if (typeof raw.legal_hold !== 'boolean') {
+      const err = new Error('Malformed legal_hold: expected boolean');
       err.statusCode = 502;
       throw err;
     }

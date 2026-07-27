@@ -2,7 +2,9 @@
 
 ## Purpose
 
-This document catalogs all division operations in the grant stream contracts and confirms they use safe rounding behavior (round down) to prevent the Point One Cent exploit.
+This document catalogs all division operations in the grant stream contracts and
+confirms they use safe rounding behavior (round down) to prevent the Point One
+Cent exploit.
 
 ## Critical Division Operations
 
@@ -11,6 +13,7 @@ This document catalogs all division operations in the grant stream contracts and
 **Location:** `contracts/grant_stream/src/lib.rs:242`
 
 **Code:**
+
 ```rust
 let validator_share = accrued
     .checked_mul(500)
@@ -24,6 +27,7 @@ let validator_share = accrued
 **Rounding Behavior:** ✅ Rounds down (truncates toward zero)
 
 **Example:**
+
 - Input: `accrued = 1007`
 - Calculation: `(1007 * 500) / 10000 = 503500 / 10000 = 50.35`
 - Result: `50` (0.35 remainder stays in contract)
@@ -37,6 +41,7 @@ let validator_share = accrued
 **Location:** `contracts/grant_stream/src/lib.rs:435`
 
 **Code:**
+
 ```rust
 let accrued = base_accrued
     .checked_mul(multiplier)
@@ -50,6 +55,7 @@ let accrued = base_accrued
 **Rounding Behavior:** ✅ Rounds down (truncates toward zero)
 
 **Example:**
+
 - Input: `base_accrued = 10000`, `multiplier = 5000` (50% warmup)
 - Calculation: `(10000 * 5000) / 10000 = 50000000 / 10000 = 5000`
 - Result: `5000` (exact in this case)
@@ -63,6 +69,7 @@ let accrued = base_accrued
 **Location:** `contracts/grant_contracts/src/clawback_resilient.rs:275`
 
 **Code:**
+
 ```rust
 let amount = (shares * current_balance)
     .checked_div(total_shares)  // ← DIVISION
@@ -82,6 +89,7 @@ let amount = (shares * current_balance)
 **Location:** `contracts/grant_contracts/src/clawback_resilient.rs:255`
 
 **Code:**
+
 ```rust
 let shares = (scaled_amount * total_shares)
     .checked_div(current_balance)  // ← DIVISION 1
@@ -105,6 +113,7 @@ let shares = (scaled_amount * total_shares)
 **Location:** `contracts/grant_stream/src/circuit_breakers.rs:76`
 
 **Code:**
+
 ```rust
 let deviation_bps = diff
     .saturating_mul(10_000)
@@ -125,6 +134,7 @@ let deviation_bps = diff
 **Location:** `contracts/grant_contracts/src/oracle_integration.rs:86`
 
 **Code:**
+
 ```rust
 let xlm_amount = scaled_amount
     .checked_div(price_feed.price)  // ← DIVISION
@@ -164,6 +174,7 @@ Rust's integer division (`/` operator and `checked_div()`) follows these rules:
 ### Why This Is Safe
 
 For all our use cases:
+
 1. Amounts are always positive (i128 but never negative)
 2. Division always rounds down
 3. Remainders stay in the contract
@@ -173,11 +184,9 @@ For all our use cases:
 
 ## Dangerous Patterns NOT Found
 
-✅ **No `ceil_div` or ceiling division**
-✅ **No `round_half_up` or banker's rounding**
-✅ **No floating-point division**
-✅ **No custom rounding logic**
-✅ **No division with rounding mode parameters**
+✅ **No `ceil_div` or ceiling division** ✅ **No `round_half_up` or banker's
+rounding** ✅ **No floating-point division** ✅ **No custom rounding logic** ✅
+**No division with rounding mode parameters**
 
 All divisions use standard `checked_div()` which is safe.
 
@@ -197,6 +206,7 @@ Proves that division rounding is safe through:
 ### Test Results
 
 All tests pass, proving:
+
 - ✅ Division rounds down correctly
 - ✅ No cumulative rounding errors
 - ✅ Contract never falls short of obligations
@@ -247,6 +257,7 @@ All tests pass, proving:
 ### Red Flags to Watch For
 
 🚨 **DANGER:** If you see any of these patterns:
+
 - `ceil_div()` or ceiling division
 - `round()`, `round_up()`, or similar
 - Floating-point division (`f64`, `f32`)
@@ -258,6 +269,7 @@ All tests pass, proving:
 ### Safe Patterns
 
 ✅ **SAFE:** These patterns are approved:
+
 - `checked_div()` for integer division
 - `saturating_div()` for non-critical calculations
 - Division with explicit truncation
@@ -270,7 +282,8 @@ All tests pass, proving:
 - **Test Suite:** `test_point_one_cent_exploit.rs`
 - **Documentation:** `POINT_ONE_CENT_EXPLOIT_PREVENTION.md`
 - **Run Guide:** `RUN_POINT_ONE_CENT_TESTS.md`
-- **Rust Division Docs:** https://doc.rust-lang.org/std/primitive.i128.html#method.checked_div
+- **Rust Division Docs:**
+  https://doc.rust-lang.org/std/primitive.i128.html#method.checked_div
 
 ---
 
