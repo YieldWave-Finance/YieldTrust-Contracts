@@ -1,6 +1,6 @@
+
 # Rust
 /target/
-Cargo.lock
 **/*.rs.bk
 
 # IDE
@@ -26,3 +26,8 @@ node_modules/
 artifacts/
 cache/
 .env
+
+# Binary installer files
+rustup-init.exe
+vs_buildtools.exe
+*.exe

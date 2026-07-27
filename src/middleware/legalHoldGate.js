@@ -21,9 +21,9 @@
  *    so a broken adapter cannot accidentally allow a held escrow through.
  */
 
-"use strict";
+'use strict';
 
-const { readEscrow } = require("../services/escrowRead");
+const { readEscrow } = require('../services/escrowRead');
 
 /**
  * Middleware factory — returns a configured middleware function.
@@ -31,13 +31,10 @@ const { readEscrow } = require("../services/escrowRead");
  */
 async function legalHoldGate(req, res, next) {
   // Resolve escrow ID from the most common locations
-  const escrowId =
-    req.params?.escrowId ||
-    req.body?.escrow_id  ||
-    req.query?.escrow_id;
+  const escrowId = req.params?.escrowId || req.body?.escrow_id || req.query?.escrow_id;
 
   if (!escrowId) {
-    return res.status(400).json({ error: "Missing escrow_id" });
+    return res.status(400).json({ error: 'Missing escrow_id' });
   }
 
   let escrow;
@@ -49,11 +46,11 @@ async function legalHoldGate(req, res, next) {
       return res.status(err.statusCode).json({ error: err.message });
     }
     // Any other failure (adapter down, unexpected data) → block safely
-    return res.status(502).json({ error: "Escrow is under legal hold" });
+    return res.status(502).json({ error: 'Escrow is under legal hold' });
   }
 
   if (escrow.legal_hold === true) {
-    return res.status(502).json({ error: "Escrow is under legal hold" });
+    return res.status(502).json({ error: 'Escrow is under legal hold' });
   }
 
   // Attach for downstream handlers so they don't need to re-fetch
