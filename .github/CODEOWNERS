@@ -1,0 +1,38 @@
+# CODEOWNERS
+# These owners will be automatically requested for review
+# when a pull request touches matching files.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything not matched below
+* @Husten150
+
+# Smart contracts (Soroban / Rust)
+/contracts/ @Husten150
+/contracts/admin/ @Husten150
+/contracts/arbitration/ @Husten150
+/contracts/bidding/ @Husten150
+/contracts/compliance/ @Husten150
+/contracts/contrib/ @Husten150
+/contracts/grant_contracts/ @Husten150
+/contracts/grant_multisig/ @Husten150
+/contracts/grant_stream/ @Husten150
+/contracts/grants/ @Husten150
+/contracts/treasury/ @Husten150
+/contracts/vesting_contracts/ @Husten150
+/contracts/zk_kyc/ @Husten150
+
+# Off-chain adapters / services
+/src/ @Husten150
+
+# Tests
+/tests/ @Husten150
+/contracts/tests/ @Husten150
+
+# Documentation
+/docs/ @Husten150
+
+# Automation / tooling
+/scripts/ @Husten150
+
+# CI/CD
+/.github/workflows/ @Husten150
