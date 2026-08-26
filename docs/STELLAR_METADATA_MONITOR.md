@@ -2,19 +2,25 @@
 
 ## Overview
 
-The Stellar Metadata Monitor ensures that Grant-Stream contracts stay synchronized with Stellar asset metadata changes. When a DAO rebrands or changes its token's metadata (e.g., ticker symbol), this system detects the change and updates the contract state, ensuring accurate user experience throughout long-term (4-year) grant cycles.
+The Stellar Metadata Monitor ensures that Grant-Stream contracts stay
+synchronized with Stellar asset metadata changes. When a DAO rebrands or changes
+its token's metadata (e.g., ticker symbol), this system detects the change and
+updates the contract state, ensuring accurate user experience throughout
+long-term (4-year) grant cycles.
 
 ## Components
 
 ### 1. Smart Contract (`StellarMetadataMonitor.sol`)
 
 **Key Features:**
+
 - Register Stellar assets for monitoring
 - Track metadata changes via change requests
 - Emit `MetadataUpdate` events for dashboard/backend integration
 - Owner-managed approval process for metadata changes
 
 **Main Functions:**
+
 - `registerAsset()` - Register a new Stellar asset
 - `reportMetadataChange()` - Report detected metadata change
 - `processMetadataChange()` - Process and approve a change request
@@ -22,21 +28,25 @@ The Stellar Metadata Monitor ensures that Grant-Stream contracts stay synchroniz
 - `getAssetMetadata()` - View current asset metadata
 
 **Events:**
+
 - `MetadataUpdate` - Emitted when metadata changes (triggers dashboard update)
 - `MetadataChangeRequested` - New change request submitted
 - `MetadataChangeProcessed` - Change request approved and processed
 
 ### 2. Monitoring Worker (`stellar-metadata-worker.js`)
 
-**Purpose:** Off-chain service that monitors Stellar network for metadata changes
+**Purpose:** Off-chain service that monitors Stellar network for metadata
+changes
 
 **Features:**
+
 - Polls Stellar Horizon API at configurable intervals
 - Compares on-chain metadata with current Stellar state
 - Automatically reports changes to smart contract
 - Emits detailed logs for debugging
 
 **Configuration:**
+
 ```bash
 STELLAR_RPC_URL=https://horizon.stellar.org
 ETHEREUM_RPC_URL=http://localhost:8545
@@ -89,6 +99,7 @@ contract.registerAsset(
 #### 2. Worker Detects Rebrand
 
 When DAO rebrands from "USD" to "USDC":
+
 - Worker polls Stellar Horizon API
 - Detects asset code changed from "USD" to "USDC"
 - Calls `reportMetadataChange()` on contract
@@ -107,20 +118,24 @@ contract.processMetadataChange(1);  // Change request ID
 #### 4. Dashboard Updates
 
 Backend services listen for `MetadataUpdate` events:
+
 ```javascript
-contract.on('MetadataUpdate', (stellarAssetId, oldCode, newCode, oldName, newName, timestamp) => {
+contract.on(
+  'MetadataUpdate',
+  (stellarAssetId, oldCode, newCode, oldName, newName, timestamp) => {
     console.log(`Asset rebranded: ${oldCode} -> ${newCode}`);
     console.log(`Name changed: ${oldName} -> ${newName}`);
-    
+
     // Update database/cache
     updateAssetMetadata(stellarAssetId, {
-        assetCode: newCode,
-        name: newName
+      assetCode: newCode,
+      name: newName,
     });
-    
+
     // Refresh UI
     refreshDashboard();
-});
+  },
+);
 ```
 
 ## Architecture
@@ -193,7 +208,9 @@ node scripts/stellar-metadata-worker.js
 ## Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/lifewithbigdamz/Grant-Stream-Contracts/issues
+
+- GitHub Issues:
+  https://github.com/lifewithbigdamz/Grant-Stream-Contracts/issues
 - Documentation: See main README.md
 
 ---

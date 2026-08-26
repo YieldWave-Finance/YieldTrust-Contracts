@@ -2,17 +2,23 @@
 
 ## Overview
 
-The Security Council is a critical security layer designed to protect the Grant Stream protocol from governance attacks and social engineering. It implements a 3-of-5 multi-signature veto authority over DAO-triggered sensitive operations.
+The Security Council is a critical security layer designed to protect the Grant
+Stream protocol from governance attacks and social engineering. It implements a
+3-of-5 multi-signature veto authority over DAO-triggered sensitive operations.
 
 ## Problem Statement
 
 Governance tokens can be hijacked through various attack vectors:
+
 - **51% attacks**: Malicious actors accumulate voting power
-- **Flash loan governance attacks**: Temporary token borrowing to pass malicious proposals
-- **Social engineering**: Manipulation of token holders to approve harmful actions
+- **Flash loan governance attacks**: Temporary token borrowing to pass malicious
+  proposals
+- **Social engineering**: Manipulation of token holders to approve harmful
+  actions
 - **Compromised keys**: Admin or DAO keys falling into wrong hands
 
 Without additional safeguards, a compromised DAO could:
+
 - Claw back all active grants
 - Drain the treasury
 - Change critical protocol parameters
@@ -22,12 +28,16 @@ Without additional safeguards, a compromised DAO could:
 
 ### Architecture
 
-The Security Council provides a **human-in-the-loop** security layer with the following characteristics:
+The Security Council provides a **human-in-the-loop** security layer with the
+following characteristics:
 
-1. **3-of-5 Multi-Sig Authority**: Requires 3 out of 5 council members to veto an action
-2. **48-Hour Timelock**: All governance-sensitive operations have a mandatory 48-hour delay
+1. **3-of-5 Multi-Sig Authority**: Requires 3 out of 5 council members to veto
+   an action
+2. **48-Hour Timelock**: All governance-sensitive operations have a mandatory
+   48-hour delay
 3. **Veto Power Only**: Council cannot initiate actions, only block them
-4. **Annual Key Rotation**: Council keys must be rotated yearly via 7-day DAO-approved timelock
+4. **Annual Key Rotation**: Council keys must be rotated yearly via 7-day
+   DAO-approved timelock
 5. **Checks and Balances**: Neither DAO nor Council has absolute power
 
 ### Protected Operations
@@ -85,12 +95,14 @@ contract.council_sign_veto(env, action_id, council_member_3);
 ### 3. Execution or Veto (After 48 Hours)
 
 **If NOT vetoed:**
+
 ```rust
 // After 48 hours, action can be executed
 contract.execute_timelocked_action(env, action_id);
 ```
 
 **If vetoed:**
+
 ```rust
 // Execution fails - action is blocked
 // Error: ActionAlreadyVetoed
@@ -189,6 +201,7 @@ let members = contract.get_council_members(env);
 ### 3. Transparent Operations
 
 All actions emit events:
+
 - `ActionPending`: New timelocked action created
 - `VetoSigned`: Council member signs veto
 - `ActionVetoed`: Action blocked by council
@@ -302,23 +315,28 @@ Comprehensive test suite covers:
 10. **Double-Signing Prevention**: Members cannot sign twice
 
 Run tests:
+
 ```bash
 cargo test test_security_council
 ```
 
 ## Acceptance Criteria
 
-✅ **Acceptance 1**: Protocol treasury is protected from governance attacks and social engineering
+✅ **Acceptance 1**: Protocol treasury is protected from governance attacks and
+social engineering
 
-✅ **Acceptance 2**: Checks and balances ensure neither token holders nor council have absolute power
+✅ **Acceptance 2**: Checks and balances ensure neither token holders nor
+council have absolute power
 
-✅ **Acceptance 3**: High-value donor capital is structurally shielded from sudden, malicious state changes
+✅ **Acceptance 3**: High-value donor capital is structurally shielded from
+sudden, malicious state changes
 
 ## Operational Guidelines
 
 ### For DAO/Admin
 
-1. Always use `protected_clawback` instead of direct `cancel_grant` for sensitive operations
+1. Always use `protected_clawback` instead of direct `cancel_grant` for
+   sensitive operations
 2. Communicate planned actions to community before initiating
 3. Provide clear justification for all timelocked actions
 4. Monitor council rotation schedule
@@ -347,21 +365,30 @@ cargo test test_security_council
 ✅ Social engineering of token holders  
 ✅ Compromised admin keys  
 ✅ Malicious treasury draining  
-✅ Unauthorized grant clawbacks  
+✅ Unauthorized grant clawbacks
 
 ### Residual Risks
 
-⚠️ **Council Collusion**: If 3+ council members collude, they could block legitimate actions
+⚠️ **Council Collusion**: If 3+ council members collude, they could block
+legitimate actions
+
 - **Mitigation**: DAO can rotate council with 7-day timelock
 
-⚠️ **Council Unavailability**: If council doesn't respond, malicious actions could execute
+⚠️ **Council Unavailability**: If council doesn't respond, malicious actions
+could execute
+
 - **Mitigation**: 48-hour window provides time for at least 3 members to respond
 
 ⚠️ **Slow Response**: 48-hour delay could slow emergency responses
-- **Mitigation**: Legitimate emergencies can be communicated to council for fast-track approval
+
+- **Mitigation**: Legitimate emergencies can be communicated to council for
+  fast-track approval
 
 ## Conclusion
 
-The Security Council provides a critical defense layer against governance attacks while maintaining decentralization through checks and balances. The 3-of-5 multi-sig with 48-hour timelock creates a practical security boundary that protects high-value donor capital without centralizing control.
+The Security Council provides a critical defense layer against governance
+attacks while maintaining decentralization through checks and balances. The
+3-of-5 multi-sig with 48-hour timelock creates a practical security boundary
+that protects high-value donor capital without centralizing control.
 
 **Labels**: security, governance, critical

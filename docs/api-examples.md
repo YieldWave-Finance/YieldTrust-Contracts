@@ -4,7 +4,8 @@
 
 All escrow read responses include a `legal_hold` field.  
 **Clients must check `legal_hold` before initiating any funding action.**  
-If `legal_hold` is `true`, the server will reject all funding actions with `502`.
+If `legal_hold` is `true`, the server will reject all funding actions with
+`502`.
 
 ---
 
@@ -18,10 +19,10 @@ curl -s http://localhost:3000/escrow/escrow-abc-123
 
 ```json
 {
-  "escrow_id":  "escrow-abc-123",
-  "balance":    "5000000000000000000",
-  "recipient":  "0xRecipientAddress",
-  "status":     "active",
+  "escrow_id": "escrow-abc-123",
+  "balance": "5000000000000000000",
+  "recipient": "0xRecipientAddress",
+  "status": "active",
   "legal_hold": false
 }
 ```
@@ -30,10 +31,10 @@ curl -s http://localhost:3000/escrow/escrow-abc-123
 
 ```json
 {
-  "escrow_id":  "escrow-abc-123",
-  "balance":    "5000000000000000000",
-  "recipient":  "0xRecipientAddress",
-  "status":     "active",
+  "escrow_id": "escrow-abc-123",
+  "balance": "5000000000000000000",
+  "recipient": "0xRecipientAddress",
+  "status": "active",
   "legal_hold": true
 }
 ```
@@ -52,9 +53,9 @@ curl -s -X POST http://localhost:3000/escrow/escrow-abc-123/fund \
 
 ```json
 {
-  "message":   "Funding initiated",
+  "message": "Funding initiated",
   "escrow_id": "escrow-abc-123",
-  "amount":    "1000000000000000000"
+  "amount": "1000000000000000000"
 }
 ```
 
@@ -96,27 +97,35 @@ curl -s -X POST http://localhost:3000/escrow/escrow-abc-123/withdraw \
 
 ## Error Reference
 
-| Status | Meaning |
-|--------|---------|
-| 200    | Success |
+| Status | Meaning                                       |
+| ------ | --------------------------------------------- |
+| 200    | Success                                       |
 | 400    | Invalid input (bad escrow ID, missing fields) |
-| 404    | Escrow not found |
-| 502    | Escrow is under legal hold — action blocked |
-| 503    | On-chain adapter unavailable |
+| 404    | Escrow not found                              |
+| 502    | Escrow is under legal hold — action blocked   |
+| 503    | On-chain adapter unavailable                  |
 
 ---
 
 ## Security Notes
 
-1. **Safe-fail default**: If the `legal_hold` field is missing or not a boolean in the on-chain response, the API defaults to `true` (blocked). A broken adapter cannot accidentally unblock a held escrow.
+1. **Safe-fail default**: If the `legal_hold` field is missing or not a boolean
+   in the on-chain response, the API defaults to `true` (blocked). A broken
+   adapter cannot accidentally unblock a held escrow.
 
-2. **No stack traces**: Error responses never include internal details or stack traces.
+2. **No stack traces**: Error responses never include internal details or stack
+   traces.
 
-3. **Input validation**: Escrow IDs are validated against `/^[a-zA-Z0-9_-]{1,64}$/` before any on-chain call is made.
+3. **Input validation**: Escrow IDs are validated against
+   `/^[a-zA-Z0-9_-]{1,64}$/` before any on-chain call is made.
 
-4. **Client responsibility**: Clients should read the escrow state first and check `legal_hold` before attempting any funding action. This avoids unnecessary 502 responses.
+4. **Client responsibility**: Clients should read the escrow state first and
+   check `legal_hold` before attempting any funding action. This avoids
+   unnecessary 502 responses.
 
-5. **Consistent gating**: The `legalHoldGate` middleware is applied to all mutating endpoints (`/fund`, `/release`, `/withdraw`). Adding new funding endpoints must include this middleware.
+5. **Consistent gating**: The `legalHoldGate` middleware is applied to all
+   mutating endpoints (`/fund`, `/release`, `/withdraw`). Adding new funding
+   endpoints must include this middleware.
 
 ---
 
@@ -139,10 +148,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  escrow_id:  { type: string }
-                  balance:    { type: string }
-                  recipient:  { type: string }
-                  status:     { type: string }
+                  escrow_id: { type: string }
+                  balance: { type: string }
+                  recipient: { type: string }
+                  status: { type: string }
                   legal_hold: { type: boolean }
 
   /escrow/{escrowId}/fund:

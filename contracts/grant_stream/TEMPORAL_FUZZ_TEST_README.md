@@ -2,42 +2,52 @@
 
 ## Overview
 
-This fuzz test focuses on the `calculate_flow` logic (implemented in `calculate_accrued` function) and verifies temporal invariants for the grant streaming contract.
+This fuzz test focuses on the `calculate_flow` logic (implemented in
+`calculate_accrued` function) and verifies temporal invariants for the grant
+streaming contract.
 
 ## Test Coverage
 
 ### 1. Random Time Jump Testing (`test_temporal_invariant_random_time_jumps`)
+
 - **Time Range**: 1 second to 10 years (315,360,000 seconds)
 - **Scenarios**: 10-50 random time jumps per test
-- **Features**: 
+- **Features**:
   - Random withdrawals after each time jump
   - Configurable warmup periods
   - Optional validator rewards (5% split)
   - Multiple grant configurations
 
 ### 2. Boundary Testing (`test_stream_start_end_boundaries`)
+
 - **Start Boundary**: Tests behavior exactly at and before stream start time
 - **End Boundary**: Tests behavior around stream completion
 - **Offset Range**: ±1000 seconds from boundary points
 - **Verification**: No tokens should be available before start time
 
 ### 3. Maximum Duration Stress Test (`test_maximum_duration_temporal_invariant`)
+
 - **Duration**: Full 10-year testing period
 - **Purpose**: Verify no overflow or precision loss over maximum duration
 - **Validation**: Total withdrawn never exceeds total allocation
 
 ### 4. Mathematical Precision Test (`test_long_term_mathematical_precision`)
+
 - **Large Values**: Tests with near-maximum i128 values
 - **High Flow Rates**: Stress tests with large flow rates
 - **Multiple Checkpoints**: Verifies consistency at various time points
 
 ## Key Invariants Verified
 
-1. **Total Allocation Invariant**: `withdrawn + claimable ≤ total_amount` for each grant
-2. **Global Token Invariant**: Total tokens in system never exceed initial allocation
+1. **Total Allocation Invariant**: `withdrawn + claimable ≤ total_amount` for
+   each grant
+2. **Global Token Invariant**: Total tokens in system never exceed initial
+   allocation
 3. **Temporal Boundary Invariant**: No tokens available before stream start time
-4. **Flow Calculation Invariant**: Actual flow never exceeds expected maximum flow
-5. **Mathematical Precision Invariant**: No negative values or overflow conditions
+4. **Flow Calculation Invariant**: Actual flow never exceeds expected maximum
+   flow
+5. **Mathematical Precision Invariant**: No negative values or overflow
+   conditions
 
 ## Grant Configurations Tested
 
@@ -88,8 +98,10 @@ This fuzz test directly addresses the requirements in issue #298:
 - ✅ **Temporal Invariant Focus**: Specifically targets `calculate_flow` logic
 - ✅ **Random Time Jumps**: Simulates 1 second to 10 year jumps
 - ✅ **Boundary Testing**: Focuses on Start and End boundaries
-- ✅ **Allocation Verification**: Ensures withdrawn amount never exceeds total_allocation
-- ✅ **Final Ledger Protection**: Prevents extra tokens during final grant ledger
+- ✅ **Allocation Verification**: Ensures withdrawn amount never exceeds
+  total_allocation
+- ✅ **Final Ledger Protection**: Prevents extra tokens during final grant
+  ledger
 
 ## Performance Considerations
 
