@@ -12,25 +12,26 @@
  * The on-chain adapter is always mocked — no network calls.
  */
 
-"use strict";
+'use strict';
 
-const request = require("supertest");
+const request = require('supertest');
 
 // ─── Mock the adapter BEFORE requiring any app code ──────────────────────────
-jest.mock("../src/adapters/onChainAdapter");
-const { onChainAdapter } = require("../src/adapters/onChainAdapter");
+jest.mock('../src/adapters/onChainAdapter');
+const { onChainAdapter } = require('../src/adapters/onChainAdapter');
 
-const app = require("../src/index");
-const { readEscrow, normalise, validateEscrowId } = require("../src/services/escrowRead");
+const app = require('../src/index');
+const { readEscrow, normalise, validateEscrowId } = require('../src/services/escrowRead');
+const { fundEscrow, releaseEscrow, withdrawFromEscrow } = require('../src/services/escrowWrite');
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
-const ESCROW_ID = "escrow-abc-123";
+const ESCROW_ID = 'escrow-abc-123';
 
 const baseRaw = {
-  balance:    "5000000000000000000", // 5 ETH in wei
-  recipient:  "0xRecipientAddress",
-  status:     "active",
+  balance: '5000000000000000000', // 5 ETH in wei
+  recipient: '0xRecipientAddress',
+  status: 'active',
   legal_hold: false,
 };
 
@@ -42,150 +43,284 @@ function mockGetEscrow(raw) {
   onChainAdapter.getEscrow.mockResolvedValue(raw);
 }
 
+function mockFundEscrow() {
+  onChainAdapter.fundEscrow.mockResolvedValue({});
+}
+
+function mockReleaseEscrow() {
+  onChainAdapter.releaseEscrow.mockResolvedValue({});
+}
+
+function mockWithdrawFromEscrow() {
+  onChainAdapter.withdrawFromEscrow.mockResolvedValue({});
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. escrowRead service — unit tests
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("escrowRead service", () => {
+describe('escrowRead service', () => {
   beforeEach(() => jest.clearAllMocks());
 
   // ── 1a. Normalisation ──────────────────────────────────────────────────────
 
-  describe("normalise()", () => {
-    it("maps legal_hold: false correctly", () => {
+  describe('normalise()', () => {
+    it('maps legal_hold: false correctly', () => {
       const result = normalise(ESCROW_ID, { ...baseRaw, legal_hold: false });
       expect(result.legal_hold).toBe(false);
     });
 
-    it("maps legal_hold: true correctly", () => {
+    it('maps legal_hold: true correctly', () => {
       const result = normalise(ESCROW_ID, { ...baseRaw, legal_hold: true });
       expect(result.legal_hold).toBe(true);
     });
 
-    it("maps camelCase legalHold: true correctly", () => {
+    it('maps camelCase legalHold: true correctly', () => {
       const raw = { ...baseRaw, legal_hold: undefined, legalHold: true };
       const result = normalise(ESCROW_ID, raw);
       expect(result.legal_hold).toBe(true);
     });
 
-    it("maps camelCase legalHold: false correctly", () => {
+    it('maps camelCase legalHold: false correctly', () => {
       const raw = { ...baseRaw, legal_hold: undefined, legalHold: false };
       const result = normalise(ESCROW_ID, raw);
       expect(result.legal_hold).toBe(false);
     });
 
-    it("defaults legal_hold to TRUE when field is missing (safe-fail)", () => {
-      const raw = { balance: "0", recipient: "0xABC", status: "active" };
+    it('defaults legal_hold to TRUE when field is missing (safe-fail)', () => {
+      const raw = { balance: '0', recipient: '0xABC', status: 'active' };
       const result = normalise(ESCROW_ID, raw);
       expect(result.legal_hold).toBe(true);
     });
 
-    it("defaults legal_hold to TRUE when field is null", () => {
+    it('defaults legal_hold to TRUE when field is null', () => {
       const result = normalise(ESCROW_ID, { ...baseRaw, legal_hold: null });
       expect(result.legal_hold).toBe(true);
     });
 
-    it("defaults legal_hold to TRUE when field is a string", () => {
-      const result = normalise(ESCROW_ID, { ...baseRaw, legal_hold: "false" });
+    it('defaults legal_hold to TRUE when field is a string', () => {
+      const result = normalise(ESCROW_ID, { ...baseRaw, legal_hold: 'false' });
       expect(result.legal_hold).toBe(true);
     });
 
-    it("includes all required fields in output", () => {
+    it('includes all required fields in output', () => {
       const result = normalise(ESCROW_ID, baseRaw);
       expect(result).toMatchObject({
-        escrow_id:  ESCROW_ID,
-        balance:    baseRaw.balance,
-        recipient:  baseRaw.recipient,
-        status:     baseRaw.status,
+        escrow_id: ESCROW_ID,
+        balance: baseRaw.balance,
+        recipient: baseRaw.recipient,
+        status: baseRaw.status,
         legal_hold: false,
       });
     });
 
     it("coerces missing balance to '0'", () => {
-      const result = normalise(ESCROW_ID, { recipient: "0xABC", status: "active", legal_hold: false });
-      expect(result.balance).toBe("0");
+      const result = normalise(ESCROW_ID, {
+        recipient: '0xABC',
+        status: 'active',
+        legal_hold: false,
+      });
+      expect(result.balance).toBe('0');
     });
   });
 
   // ── 1b. validateEscrowId ───────────────────────────────────────────────────
 
-  describe("validateEscrowId()", () => {
-    it("accepts valid alphanumeric IDs", () => {
-      expect(() => validateEscrowId("escrow-123")).not.toThrow();
-      expect(() => validateEscrowId("ABC_xyz-001")).not.toThrow();
+  describe('validateEscrowId()', () => {
+    it('accepts valid alphanumeric IDs', () => {
+      expect(() => validateEscrowId('escrow-123')).not.toThrow();
+      expect(() => validateEscrowId('ABC_xyz-001')).not.toThrow();
     });
 
-    it("throws 400 for empty string", () => {
-      expect(() => validateEscrowId("")).toThrow(expect.objectContaining({ statusCode: 400 }));
+    it('throws 400 for empty string', () => {
+      expect(() => validateEscrowId('')).toThrow(expect.objectContaining({ statusCode: 400 }));
     });
 
-    it("throws 400 for non-string input", () => {
+    it('throws 400 for non-string input', () => {
       expect(() => validateEscrowId(123)).toThrow(expect.objectContaining({ statusCode: 400 }));
       expect(() => validateEscrowId(null)).toThrow(expect.objectContaining({ statusCode: 400 }));
-      expect(() => validateEscrowId(undefined)).toThrow(expect.objectContaining({ statusCode: 400 }));
-    });
-
-    it("throws 400 for ID with special characters", () => {
-      expect(() => validateEscrowId("escrow<script>")).toThrow(
-        expect.objectContaining({ statusCode: 400 })
+      expect(() => validateEscrowId(undefined)).toThrow(
+        expect.objectContaining({ statusCode: 400 }),
       );
     });
 
-    it("throws 400 for ID longer than 64 chars", () => {
-      expect(() => validateEscrowId("a".repeat(65))).toThrow(
-        expect.objectContaining({ statusCode: 400 })
+    it('throws 400 for ID with special characters', () => {
+      expect(() => validateEscrowId('escrow<script>')).toThrow(
+        expect.objectContaining({ statusCode: 400 }),
+      );
+    });
+
+    it('throws 400 for ID longer than 64 chars', () => {
+      expect(() => validateEscrowId('a'.repeat(65))).toThrow(
+        expect.objectContaining({ statusCode: 400 }),
       );
     });
   });
 
   // ── 1c. readEscrow ─────────────────────────────────────────────────────────
 
-  describe("readEscrow()", () => {
-    it("returns normalised escrow with legal_hold: false", async () => {
+  describe('readEscrow()', () => {
+    it('returns normalised escrow with legal_hold: false', async () => {
       mockGetEscrow(baseRaw);
       const result = await readEscrow(ESCROW_ID);
       expect(result.legal_hold).toBe(false);
       expect(result.escrow_id).toBe(ESCROW_ID);
     });
 
-    it("returns normalised escrow with legal_hold: true", async () => {
+    it('returns normalised escrow with legal_hold: true', async () => {
       mockGetEscrow(heldRaw);
       const result = await readEscrow(ESCROW_ID);
       expect(result.legal_hold).toBe(true);
     });
 
-    it("throws 404 when adapter returns null", async () => {
+    it('throws 404 when adapter returns null', async () => {
       onChainAdapter.getEscrow.mockResolvedValue(null);
       await expect(readEscrow(ESCROW_ID)).rejects.toMatchObject({ statusCode: 404 });
     });
 
-    it("throws 503 when adapter throws a generic error", async () => {
-      onChainAdapter.getEscrow.mockRejectedValue(new Error("RPC timeout"));
+    it('throws 503 when adapter throws a generic error', async () => {
+      onChainAdapter.getEscrow.mockRejectedValue(new Error('RPC timeout'));
       await expect(readEscrow(ESCROW_ID)).rejects.toMatchObject({ statusCode: 503 });
     });
 
-    it("re-throws 400 validation errors from adapter", async () => {
-      const validationErr = new Error("bad id");
+    it('re-throws 400 validation errors from adapter', async () => {
+      const validationErr = new Error('bad id');
       validationErr.statusCode = 400;
       onChainAdapter.getEscrow.mockRejectedValue(validationErr);
       await expect(readEscrow(ESCROW_ID)).rejects.toMatchObject({ statusCode: 400 });
     });
 
-    it("throws 400 for invalid escrow ID", async () => {
-      await expect(readEscrow("bad id!")).rejects.toMatchObject({ statusCode: 400 });
+    it('throws 400 for invalid escrow ID', async () => {
+      await expect(readEscrow('bad id!')).rejects.toMatchObject({ statusCode: 400 });
       expect(onChainAdapter.getEscrow).not.toHaveBeenCalled();
     });
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. GET /escrow/:escrowId — read endpoint
+// 1b. escrowWrite service — unit tests
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("GET /escrow/:escrowId", () => {
+describe('escrowWrite service', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("returns 200 with legal_hold: false when not held", async () => {
+  describe('fundEscrow()', () => {
+    it('returns pending status with amount on success', async () => {
+      mockFundEscrow();
+      const result = await fundEscrow(ESCROW_ID, '1000000000000000000');
+      expect(result).toMatchObject({
+        status: 'pending',
+        message: 'Funding initiated',
+        escrow_id: ESCROW_ID,
+        amount: '1000000000000000000',
+      });
+      expect(onChainAdapter.fundEscrow).toHaveBeenCalledWith(ESCROW_ID, '1000000000000000000');
+    });
+
+    it('throws 400 for invalid escrow ID', async () => {
+      await expect(fundEscrow('bad id!', '100')).rejects.toMatchObject({ statusCode: 400 });
+      expect(onChainAdapter.fundEscrow).not.toHaveBeenCalled();
+    });
+
+    it('throws 400 for non-string amount', async () => {
+      await expect(fundEscrow(ESCROW_ID, 123)).rejects.toMatchObject({ statusCode: 400 });
+      expect(onChainAdapter.fundEscrow).not.toHaveBeenCalled();
+    });
+
+    it('throws 400 for empty string amount', async () => {
+      await expect(fundEscrow(ESCROW_ID, '')).rejects.toMatchObject({ statusCode: 400 });
+      expect(onChainAdapter.fundEscrow).not.toHaveBeenCalled();
+    });
+
+    it('throws 502 when adapter throws', async () => {
+      onChainAdapter.fundEscrow.mockRejectedValue(new Error('RPC error'));
+      await expect(fundEscrow(ESCROW_ID, '100')).rejects.toMatchObject({ statusCode: 502 });
+    });
+
+    it('re-throws 4xx errors from adapter', async () => {
+      const err = new Error('bad request');
+      err.statusCode = 400;
+      onChainAdapter.fundEscrow.mockRejectedValue(err);
+      await expect(fundEscrow(ESCROW_ID, '100')).rejects.toMatchObject({ statusCode: 400 });
+    });
+  });
+
+  describe('releaseEscrow()', () => {
+    it('returns pending status on success', async () => {
+      mockReleaseEscrow();
+      const result = await releaseEscrow(ESCROW_ID);
+      expect(result).toMatchObject({
+        status: 'pending',
+        message: 'Release initiated',
+        escrow_id: ESCROW_ID,
+      });
+      expect(onChainAdapter.releaseEscrow).toHaveBeenCalledWith(ESCROW_ID);
+    });
+
+    it('throws 400 for invalid escrow ID', async () => {
+      await expect(releaseEscrow('bad id!')).rejects.toMatchObject({ statusCode: 400 });
+      expect(onChainAdapter.releaseEscrow).not.toHaveBeenCalled();
+    });
+
+    it('throws 502 when adapter throws', async () => {
+      onChainAdapter.releaseEscrow.mockRejectedValue(new Error('RPC error'));
+      await expect(releaseEscrow(ESCROW_ID)).rejects.toMatchObject({ statusCode: 502 });
+    });
+  });
+
+  describe('withdrawFromEscrow()', () => {
+    it('returns pending status on success without amount', async () => {
+      mockWithdrawFromEscrow();
+      const result = await withdrawFromEscrow(ESCROW_ID);
+      expect(result).toMatchObject({
+        status: 'pending',
+        message: 'Withdrawal initiated',
+        escrow_id: ESCROW_ID,
+      });
+      expect(result).not.toHaveProperty('amount');
+      expect(onChainAdapter.withdrawFromEscrow).toHaveBeenCalledWith(ESCROW_ID, undefined);
+    });
+
+    it('returns pending status on success with amount', async () => {
+      mockWithdrawFromEscrow();
+      const result = await withdrawFromEscrow(ESCROW_ID, '5000000000000000000');
+      expect(result).toMatchObject({
+        status: 'pending',
+        message: 'Withdrawal initiated',
+        escrow_id: ESCROW_ID,
+        amount: '5000000000000000000',
+      });
+      expect(onChainAdapter.withdrawFromEscrow).toHaveBeenCalledWith(
+        ESCROW_ID,
+        '5000000000000000000',
+      );
+    });
+
+    it('throws 400 for invalid escrow ID', async () => {
+      await expect(withdrawFromEscrow('bad id!')).rejects.toMatchObject({ statusCode: 400 });
+      expect(onChainAdapter.withdrawFromEscrow).not.toHaveBeenCalled();
+    });
+
+    it('throws 400 for non-string amount', async () => {
+      await expect(withdrawFromEscrow(ESCROW_ID, 123)).rejects.toMatchObject({ statusCode: 400 });
+      expect(onChainAdapter.withdrawFromEscrow).not.toHaveBeenCalled();
+    });
+
+    it('throws 502 when adapter throws', async () => {
+      onChainAdapter.withdrawFromEscrow.mockRejectedValue(new Error('RPC error'));
+      await expect(withdrawFromEscrow(ESCROW_ID)).rejects.toMatchObject({ statusCode: 502 });
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. GET /escrow/:escrowId — read endpoint
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('GET /escrow/:escrowId', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('returns 200 with legal_hold: false when not held', async () => {
     mockGetEscrow(baseRaw);
     const res = await request(app).get(`/escrow/${ESCROW_ID}`);
     expect(res.status).toBe(200);
@@ -193,37 +328,37 @@ describe("GET /escrow/:escrowId", () => {
     expect(res.body.escrow_id).toBe(ESCROW_ID);
   });
 
-  it("returns 200 with legal_hold: true when held", async () => {
+  it('returns 200 with legal_hold: true when held', async () => {
     mockGetEscrow(heldRaw);
     const res = await request(app).get(`/escrow/${ESCROW_ID}`);
     expect(res.status).toBe(200);
     expect(res.body.legal_hold).toBe(true);
   });
 
-  it("includes all required fields in response", async () => {
+  it('includes all required fields in response', async () => {
     mockGetEscrow(baseRaw);
     const res = await request(app).get(`/escrow/${ESCROW_ID}`);
-    expect(res.body).toHaveProperty("escrow_id");
-    expect(res.body).toHaveProperty("balance");
-    expect(res.body).toHaveProperty("recipient");
-    expect(res.body).toHaveProperty("status");
-    expect(res.body).toHaveProperty("legal_hold");
+    expect(res.body).toHaveProperty('escrow_id');
+    expect(res.body).toHaveProperty('balance');
+    expect(res.body).toHaveProperty('recipient');
+    expect(res.body).toHaveProperty('status');
+    expect(res.body).toHaveProperty('legal_hold');
   });
 
-  it("returns 404 when escrow not found", async () => {
+  it('returns 404 when escrow not found', async () => {
     onChainAdapter.getEscrow.mockResolvedValue(null);
     const res = await request(app).get(`/escrow/${ESCROW_ID}`);
     expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty("error");
+    expect(res.body).toHaveProperty('error');
   });
 
-  it("returns 400 for invalid escrow ID", async () => {
-    const res = await request(app).get("/escrow/bad id!");
+  it('returns 400 for invalid escrow ID', async () => {
+    const res = await request(app).get('/escrow/bad id!');
     expect(res.status).toBe(400);
   });
 
-  it("returns 503 when adapter is unavailable", async () => {
-    onChainAdapter.getEscrow.mockRejectedValue(new Error("network error"));
+  it('returns 503 when adapter is unavailable', async () => {
+    onChainAdapter.getEscrow.mockRejectedValue(new Error('network error'));
     const res = await request(app).get(`/escrow/${ESCROW_ID}`);
     expect(res.status).toBe(503);
   });
@@ -233,68 +368,79 @@ describe("GET /escrow/:escrowId", () => {
 // 3. POST /escrow/:escrowId/fund — legal-hold gating
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("POST /escrow/:escrowId/fund", () => {
+describe('POST /escrow/:escrowId/fund', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("proceeds (200) when legal_hold is false", async () => {
+  it('proceeds (200) when legal_hold is false', async () => {
     mockGetEscrow(baseRaw);
+    mockFundEscrow();
     const res = await request(app)
       .post(`/escrow/${ESCROW_ID}/fund`)
-      .send({ amount: "1000000000000000000" });
+      .send({ amount: '1000000000000000000' });
     expect(res.status).toBe(200);
-    expect(res.body.message).toBe("Funding initiated");
+    expect(res.body).toMatchObject({
+      status: 'pending',
+      message: 'Funding initiated',
+      escrow_id: ESCROW_ID,
+      amount: '1000000000000000000',
+    });
+    expect(onChainAdapter.fundEscrow).toHaveBeenCalledWith(ESCROW_ID, '1000000000000000000');
   });
 
-  it("returns 502 when legal_hold is true", async () => {
+  it('returns 502 when legal_hold is true', async () => {
     mockGetEscrow(heldRaw);
     const res = await request(app)
       .post(`/escrow/${ESCROW_ID}/fund`)
-      .send({ amount: "1000000000000000000" });
+      .send({ amount: '1000000000000000000' });
     expect(res.status).toBe(502);
-    expect(res.body.error).toBe("Escrow is under legal hold");
+    expect(res.body.error).toBe('Escrow is under legal hold');
   });
 
-  it("does NOT call downstream logic when legal_hold is true", async () => {
+  it('does NOT call downstream logic when legal_hold is true', async () => {
     mockGetEscrow(heldRaw);
     const res = await request(app)
       .post(`/escrow/${ESCROW_ID}/fund`)
-      .send({ amount: "1000000000000000000" });
+      .send({ amount: '1000000000000000000' });
     expect(res.status).toBe(502);
-    // Adapter was called once (for the gate check), but no funding tx
     expect(onChainAdapter.getEscrow).toHaveBeenCalledTimes(1);
+    expect(onChainAdapter.fundEscrow).not.toHaveBeenCalled();
   });
 
-  it("returns 400 when amount is missing", async () => {
+  it('returns 400 when amount is missing', async () => {
     mockGetEscrow(baseRaw);
-    const res = await request(app)
-      .post(`/escrow/${ESCROW_ID}/fund`)
-      .send({});
+    const res = await request(app).post(`/escrow/${ESCROW_ID}/fund`).send({});
     expect(res.status).toBe(400);
-    expect(res.body.error).toBe("Missing amount");
+    expect(res.body.error).toBe('Missing amount');
+    expect(onChainAdapter.fundEscrow).not.toHaveBeenCalled();
   });
 
-  it("returns 400 for invalid escrow ID", async () => {
-    const res = await request(app)
-      .post("/escrow/bad id!/fund")
-      .send({ amount: "100" });
+  it('returns 400 for invalid escrow ID', async () => {
+    const res = await request(app).post('/escrow/bad id!/fund').send({ amount: '100' });
     expect(res.status).toBe(400);
+    expect(onChainAdapter.fundEscrow).not.toHaveBeenCalled();
   });
 
-  it("returns 502 when adapter is unavailable (safe-fail)", async () => {
-    onChainAdapter.getEscrow.mockRejectedValue(new Error("RPC down"));
-    const res = await request(app)
-      .post(`/escrow/${ESCROW_ID}/fund`)
-      .send({ amount: "100" });
+  it('returns 502 when gateway adapter is unavailable (safe-fail)', async () => {
+    onChainAdapter.getEscrow.mockRejectedValue(new Error('RPC down'));
+    const res = await request(app).post(`/escrow/${ESCROW_ID}/fund`).send({ amount: '100' });
     expect(res.status).toBe(502);
-    expect(res.body.error).toBe("Escrow is under legal hold");
+    expect(res.body.error).toBe('Escrow is under legal hold');
+    expect(onChainAdapter.fundEscrow).not.toHaveBeenCalled();
   });
 
-  it("returns 404 when escrow not found", async () => {
+  it('returns 404 when escrow not found', async () => {
     onChainAdapter.getEscrow.mockResolvedValue(null);
-    const res = await request(app)
-      .post(`/escrow/${ESCROW_ID}/fund`)
-      .send({ amount: "100" });
+    const res = await request(app).post(`/escrow/${ESCROW_ID}/fund`).send({ amount: '100' });
     expect(res.status).toBe(404);
+    expect(onChainAdapter.fundEscrow).not.toHaveBeenCalled();
+  });
+
+  it('returns 502 when write adapter throws', async () => {
+    mockGetEscrow(baseRaw);
+    onChainAdapter.fundEscrow.mockRejectedValue(new Error('write failed'));
+    const res = await request(app).post(`/escrow/${ESCROW_ID}/fund`).send({ amount: '100' });
+    expect(res.status).toBe(502);
+    expect(res.body.error).toBe('Failed to initiate funding');
   });
 });
 
@@ -302,21 +448,36 @@ describe("POST /escrow/:escrowId/fund", () => {
 // 4. POST /escrow/:escrowId/release — legal-hold gating
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("POST /escrow/:escrowId/release", () => {
+describe('POST /escrow/:escrowId/release', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("proceeds (200) when legal_hold is false", async () => {
+  it('proceeds (200) when legal_hold is false', async () => {
     mockGetEscrow(baseRaw);
+    mockReleaseEscrow();
     const res = await request(app).post(`/escrow/${ESCROW_ID}/release`).send({});
     expect(res.status).toBe(200);
-    expect(res.body.message).toBe("Release initiated");
+    expect(res.body).toMatchObject({
+      status: 'pending',
+      message: 'Release initiated',
+      escrow_id: ESCROW_ID,
+    });
+    expect(onChainAdapter.releaseEscrow).toHaveBeenCalledWith(ESCROW_ID);
   });
 
-  it("returns 502 when legal_hold is true", async () => {
+  it('returns 502 when legal_hold is true', async () => {
     mockGetEscrow(heldRaw);
     const res = await request(app).post(`/escrow/${ESCROW_ID}/release`).send({});
     expect(res.status).toBe(502);
-    expect(res.body.error).toBe("Escrow is under legal hold");
+    expect(res.body.error).toBe('Escrow is under legal hold');
+    expect(onChainAdapter.releaseEscrow).not.toHaveBeenCalled();
+  });
+
+  it('returns 502 when write adapter throws', async () => {
+    mockGetEscrow(baseRaw);
+    onChainAdapter.releaseEscrow.mockRejectedValue(new Error('write failed'));
+    const res = await request(app).post(`/escrow/${ESCROW_ID}/release`).send({});
+    expect(res.status).toBe(502);
+    expect(res.body.error).toBe('Failed to initiate release');
   });
 });
 
@@ -324,21 +485,56 @@ describe("POST /escrow/:escrowId/release", () => {
 // 5. POST /escrow/:escrowId/withdraw — legal-hold gating
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("POST /escrow/:escrowId/withdraw", () => {
+describe('POST /escrow/:escrowId/withdraw', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("proceeds (200) when legal_hold is false", async () => {
+  it('proceeds (200) when legal_hold is false (no amount)', async () => {
     mockGetEscrow(baseRaw);
+    mockWithdrawFromEscrow();
     const res = await request(app).post(`/escrow/${ESCROW_ID}/withdraw`).send({});
     expect(res.status).toBe(200);
-    expect(res.body.message).toBe("Withdrawal initiated");
+    expect(res.body).toMatchObject({
+      status: 'pending',
+      message: 'Withdrawal initiated',
+      escrow_id: ESCROW_ID,
+    });
+    expect(res.body).not.toHaveProperty('amount');
+    expect(onChainAdapter.withdrawFromEscrow).toHaveBeenCalledWith(ESCROW_ID, undefined);
   });
 
-  it("returns 502 when legal_hold is true", async () => {
+  it('proceeds (200) when legal_hold is false (with amount)', async () => {
+    mockGetEscrow(baseRaw);
+    mockWithdrawFromEscrow();
+    const res = await request(app)
+      .post(`/escrow/${ESCROW_ID}/withdraw`)
+      .send({ amount: '5000000000000000000' });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      status: 'pending',
+      message: 'Withdrawal initiated',
+      escrow_id: ESCROW_ID,
+      amount: '5000000000000000000',
+    });
+    expect(onChainAdapter.withdrawFromEscrow).toHaveBeenCalledWith(
+      ESCROW_ID,
+      '5000000000000000000',
+    );
+  });
+
+  it('returns 502 when legal_hold is true', async () => {
     mockGetEscrow(heldRaw);
     const res = await request(app).post(`/escrow/${ESCROW_ID}/withdraw`).send({});
     expect(res.status).toBe(502);
-    expect(res.body.error).toBe("Escrow is under legal hold");
+    expect(res.body.error).toBe('Escrow is under legal hold');
+    expect(onChainAdapter.withdrawFromEscrow).not.toHaveBeenCalled();
+  });
+
+  it('returns 502 when write adapter throws', async () => {
+    mockGetEscrow(baseRaw);
+    onChainAdapter.withdrawFromEscrow.mockRejectedValue(new Error('write failed'));
+    const res = await request(app).post(`/escrow/${ESCROW_ID}/withdraw`).send({});
+    expect(res.status).toBe(502);
+    expect(res.body.error).toBe('Failed to initiate withdrawal');
   });
 });
 
@@ -346,16 +542,22 @@ describe("POST /escrow/:escrowId/withdraw", () => {
 // 6. legalHoldGate middleware — unit tests
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("legalHoldGate middleware", () => {
-  const legalHoldGate = require("../src/middleware/legalHoldGate");
+describe('legalHoldGate middleware', () => {
+  const legalHoldGate = require('../src/middleware/legalHoldGate');
 
   function makeReqRes(params = {}, body = {}, query = {}) {
     const req = { params, body, query };
     const res = {
       _status: null,
-      _body:   null,
-      status(code) { this._status = code; return this; },
-      json(data)   { this._body   = data; return this; },
+      _body: null,
+      status(code) {
+        this._status = code;
+        return this;
+      },
+      json(data) {
+        this._body = data;
+        return this;
+      },
     };
     const next = jest.fn();
     return { req, res, next };
@@ -363,7 +565,7 @@ describe("legalHoldGate middleware", () => {
 
   beforeEach(() => jest.clearAllMocks());
 
-  it("calls next() and attaches req.escrow when not held", async () => {
+  it('calls next() and attaches req.escrow when not held', async () => {
     mockGetEscrow(baseRaw);
     const { req, res, next } = makeReqRes({ escrowId: ESCROW_ID });
     await legalHoldGate(req, res, next);
@@ -372,38 +574,38 @@ describe("legalHoldGate middleware", () => {
     expect(req.escrow.legal_hold).toBe(false);
   });
 
-  it("returns 502 and does NOT call next() when held", async () => {
+  it('returns 502 and does NOT call next() when held', async () => {
     mockGetEscrow(heldRaw);
     const { req, res, next } = makeReqRes({ escrowId: ESCROW_ID });
     await legalHoldGate(req, res, next);
     expect(next).not.toHaveBeenCalled();
     expect(res._status).toBe(502);
-    expect(res._body.error).toBe("Escrow is under legal hold");
+    expect(res._body.error).toBe('Escrow is under legal hold');
   });
 
-  it("returns 400 when escrowId is missing", async () => {
+  it('returns 400 when escrowId is missing', async () => {
     const { req, res, next } = makeReqRes({}, {}, {});
     await legalHoldGate(req, res, next);
     expect(res._status).toBe(400);
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("resolves escrowId from req.body.escrow_id", async () => {
+  it('resolves escrowId from req.body.escrow_id', async () => {
     mockGetEscrow(baseRaw);
     const { req, res, next } = makeReqRes({}, { escrow_id: ESCROW_ID });
     await legalHoldGate(req, res, next);
     expect(next).toHaveBeenCalled();
   });
 
-  it("resolves escrowId from req.query.escrow_id", async () => {
+  it('resolves escrowId from req.query.escrow_id', async () => {
     mockGetEscrow(baseRaw);
     const { req, res, next } = makeReqRes({}, {}, { escrow_id: ESCROW_ID });
     await legalHoldGate(req, res, next);
     expect(next).toHaveBeenCalled();
   });
 
-  it("returns 502 (safe-fail) when adapter throws", async () => {
-    onChainAdapter.getEscrow.mockRejectedValue(new Error("network error"));
+  it('returns 502 (safe-fail) when adapter throws', async () => {
+    onChainAdapter.getEscrow.mockRejectedValue(new Error('network error'));
     const { req, res, next } = makeReqRes({ escrowId: ESCROW_ID });
     await legalHoldGate(req, res, next);
     expect(res._status).toBe(502);
@@ -415,34 +617,32 @@ describe("legalHoldGate middleware", () => {
 // 7. Edge cases
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe("Edge cases", () => {
+describe('Edge cases', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it("legal_hold defaults to true when on-chain field is missing", async () => {
-    mockGetEscrow({ balance: "0", recipient: "0xABC", status: "active" });
+  it('legal_hold defaults to true when on-chain field is missing', async () => {
+    mockGetEscrow({ balance: '0', recipient: '0xABC', status: 'active' });
     const res = await request(app).get(`/escrow/${ESCROW_ID}`);
     expect(res.status).toBe(200);
     expect(res.body.legal_hold).toBe(true);
   });
 
-  it("funding is blocked when legal_hold defaults to true (missing field)", async () => {
-    mockGetEscrow({ balance: "0", recipient: "0xABC", status: "active" });
-    const res = await request(app)
-      .post(`/escrow/${ESCROW_ID}/fund`)
-      .send({ amount: "100" });
+  it('funding is blocked when legal_hold defaults to true (missing field)', async () => {
+    mockGetEscrow({ balance: '0', recipient: '0xABC', status: 'active' });
+    const res = await request(app).post(`/escrow/${ESCROW_ID}/fund`).send({ amount: '100' });
     expect(res.status).toBe(502);
   });
 
-  it("returns 404 for unknown routes", async () => {
-    const res = await request(app).get("/unknown-route");
+  it('returns 404 for unknown routes', async () => {
+    const res = await request(app).get('/unknown-route');
     expect(res.status).toBe(404);
   });
 
-  it("handles escrow with zero balance correctly", async () => {
-    mockGetEscrow({ ...baseRaw, balance: "0", legal_hold: false });
+  it('handles escrow with zero balance correctly', async () => {
+    mockGetEscrow({ ...baseRaw, balance: '0', legal_hold: false });
     const res = await request(app).get(`/escrow/${ESCROW_ID}`);
     expect(res.status).toBe(200);
-    expect(res.body.balance).toBe("0");
+    expect(res.body.balance).toBe('0');
     expect(res.body.legal_hold).toBe(false);
   });
 });

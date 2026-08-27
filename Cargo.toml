@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
+license = "MIT"
 
 # Workspace members — each maps to a deployable Soroban WASM contract.
 #
@@ -37,7 +38,7 @@ members = [
 #   4. Commit both Cargo.toml and Cargo.lock together in the same PR.
 # ---------------------------------------------------------------------------
 [workspace.dependencies]
-soroban-sdk = "22.0.0"
+soroban-sdk = "=22.0.10"
 
 # ---------------------------------------------------------------------------
 # Build profiles

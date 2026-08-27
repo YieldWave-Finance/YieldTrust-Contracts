@@ -78,17 +78,20 @@ Security Impact: HIGH
 **Purpose:** Prove that 1,000 withdrawals cannot drain the contract
 
 **Setup:**
+
 - Initial balance: 1,000,000,007 stroops (awkward, prime-adjacent)
 - 5 beneficiaries with shares: 3, 7, 11, 13, 17 (total 51)
 - Unequal allocations that produce remainders
 
 **Execution:**
+
 - 1,000 partial withdrawals
 - Rotates through beneficiaries
 - Each withdrawal: 1/3 of claimable (maximizes rounding)
 - Time advances 10 seconds per iteration
 
 **Verification:**
+
 - Invariant checked after EVERY withdrawal
 - Tracks dust accumulation
 - Verifies no deficit
@@ -152,6 +155,7 @@ Security Impact: HIGH
 **File:** `contracts/grant_stream/src/lib.rs`
 
 **Before:**
+
 ```rust
 #[cfg(test)]
 mod test_security_invariants;
@@ -160,6 +164,7 @@ mod is_active_grantee_benchmark;
 ```
 
 **After:**
+
 ```rust
 #[cfg(test)]
 mod test_security_invariants;
@@ -176,6 +181,7 @@ mod is_active_grantee_benchmark;
 **File:** `contracts/grant_stream/src/lib.rs`
 
 **Added comment:**
+
 ```rust
 // ROUNDING BEHAVIOR: Integer division with checked_div truncates toward zero
 // (rounds down for positive numbers). This is INTENTIONAL and CORRECT.
@@ -194,6 +200,7 @@ mod is_active_grantee_benchmark;
 **File:** `contracts/grant_stream/src/lib.rs`
 
 **Added comment:**
+
 ```rust
 // ROUNDING BEHAVIOR: Division rounds down (truncates toward zero).
 // This ensures accrued amounts never exceed what should be paid out,
@@ -232,6 +239,7 @@ cargo check
 ### 4. Review Test Output
 
 Look for:
+
 - ✓ All 1,000 withdrawals completed
 - ✓ Invariant held at every step
 - ✓ No deficit occurred
@@ -262,15 +270,19 @@ This test suite is **focused specifically on rounding behavior**.
 
 ## Acceptance Criteria
 
-✅ **All 1,000-iteration withdrawal loops complete without triggering invariant assertion**
+✅ **All 1,000-iteration withdrawal loops complete without triggering invariant
+assertion**
+
 - Main test simulates 1,000 withdrawals
 - Invariant verified after every single withdrawal
 
 ✅ **Final `contract_balance >= sum_of_remaining_allocations` holds**
+
 - Verified in all tests
 - No deficit ever occurs
 
 ✅ **All 5 edge case tests pass**
+
 - Single unit allocation ✓
 - Max shares with remainder ✓
 - Repeated same-beneficiary withdrawals ✓
@@ -278,16 +290,19 @@ This test suite is **focused specifically on rounding behavior**.
 - Main 1,000-iteration test ✓
 
 ✅ **No division-rounding-up logic exists in withdrawal/payout path**
+
 - Confirmed: Only `checked_div()` is used
 - `checked_div()` rounds down for positive numbers
 - No `ceil_div`, `round_half_up`, or equivalent found
 
 ✅ **Test failure messages are descriptive**
+
 - Each assertion includes iteration number
 - Shows actual balance, obligations, and deficit
 - Clear error messages identify exact failure point
 
 ✅ **Tests are deterministic**
+
 - No randomness used
 - Same seed values produce same results
 - Reproducible failures
@@ -321,6 +336,7 @@ Before deploying:
 ### Red Flags
 
 🚨 Watch for:
+
 - `ceil_div()` or ceiling division
 - `round()`, `round_up()`, or similar
 - Floating-point division
@@ -331,7 +347,8 @@ Before deploying:
 
 ## References
 
-- **Main Test File:** `contracts/grant_stream/src/test_point_one_cent_exploit.rs`
+- **Main Test File:**
+  `contracts/grant_stream/src/test_point_one_cent_exploit.rs`
 - **Documentation:** `POINT_ONE_CENT_EXPLOIT_PREVENTION.md`
 - **Run Guide:** `contracts/grant_stream/RUN_POINT_ONE_CENT_TESTS.md`
 - **Audit:** `contracts/grant_stream/DIVISION_AUDIT.md`

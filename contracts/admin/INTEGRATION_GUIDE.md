@@ -2,13 +2,17 @@
 
 ## Overview
 
-The Governance Activity Monitor is a circuit breaker that protects against rapid protocol parameter changes. It automatically enforces a 7-day mandatory timelock when an admin attempts to change more than 3 protocol parameters in a single ledger.
+The Governance Activity Monitor is a circuit breaker that protects against rapid
+protocol parameter changes. It automatically enforces a 7-day mandatory timelock
+when an admin attempts to change more than 3 protocol parameters in a single
+ledger.
 
 ## Key Features
 
 - **Circuit Breaker**: Triggers when >3 parameter changes occur in one ledger
 - **Mandatory Timelock**: 7-day timelock when circuit breaker triggers
-- **Parameter Tracking**: Monitors fees, thresholds, addresses, and other parameters
+- **Parameter Tracking**: Monitors fees, thresholds, addresses, and other
+  parameters
 - **Configurable Limits**: Admins can adjust thresholds and timelock durations
 - **Audit Trail**: Complete history of all parameter changes
 
@@ -25,7 +29,8 @@ GovernanceActivityMonitor::initialize(env, admin_address)?;
 
 ### 2. Wrap Admin Functions
 
-For each admin function that changes protocol parameters, wrap it with the monitor:
+For each admin function that changes protocol parameters, wrap it with the
+monitor:
 
 ```rust
 // Original function
@@ -37,10 +42,10 @@ pub fn update_protocol_fee(env: Env, admin: Address, new_fee: i128) -> Result<()
 // Enhanced with monitoring
 pub fn update_protocol_fee(env: Env, admin: Address, new_fee: i128) -> Result<(), Error> {
     admin.require_auth();
-    
+
     // Get current fee
     let current_fee = get_current_fee(&env)?;
-    
+
     // Record the change attempt
     let change_id = GovernanceActivityMonitor::record_parameter_change(
         env.clone(),
@@ -51,17 +56,17 @@ pub fn update_protocol_fee(env: Env, admin: Address, new_fee: i128) -> Result<()
         Bytes::from_slice(&env, &new_fee.to_le_bytes()),
         String::from_str(&env, "Update protocol fee for sustainability"),
     )?;
-    
+
     // Check if change is immediately executable (no timelock)
     if change_id == 0 {
         // Monitor disabled, proceed with change
         set_current_fee(&env, new_fee);
         return Ok(());
     }
-    
+
     // Get the change details to check timelock
     let change = GovernanceActivityMonitor::get_parameter_change(env.clone(), change_id)?;
-    
+
     if env.ledger().timestamp() >= change.executable_at {
         // Timelock expired, execute the change
         GovernanceActivityMonitor::execute_parameter_change(env.clone(), admin.clone(), change_id)?;
@@ -97,9 +102,9 @@ For operations that change multiple parameters at once:
 ```rust
 pub fn batch_update_parameters(env: Env, admin: Address, params: Vec<ParameterUpdate>) -> Result<(), Error> {
     admin.require_auth();
-    
+
     let mut change_ids = Vec::new(&env);
-    
+
     // Record all parameter changes
     for update in params.iter() {
         let change_id = GovernanceActivityMonitor::record_parameter_change(
@@ -113,7 +118,7 @@ pub fn batch_update_parameters(env: Env, admin: Address, params: Vec<ParameterUp
         )?;
         change_ids.push_back(change_id);
     }
-    
+
     // Check if any changes triggered circuit breaker
     let mut has_mandatory_timelock = false;
     for change_id in change_ids.iter() {
@@ -124,16 +129,16 @@ pub fn batch_update_parameters(env: Env, admin: Address, params: Vec<ParameterUp
             }
         }
     }
-    
+
     if has_mandatory_timelock {
         return Err(Error::MandatoryTimelockTriggered);
     }
-    
+
     // Execute all changes
     for (i, update) in params.iter().enumerate() {
         let change_id = change_ids.get(i).unwrap();
         let change = GovernanceActivityMonitor::get_parameter_change(env.clone(), *change_id)?;
-        
+
         if env.ledger().timestamp() >= change.executable_at {
             GovernanceActivityMonitor::execute_parameter_change(env.clone(), admin.clone(), *change_id)?;
             // Apply the actual parameter change
@@ -142,7 +147,7 @@ pub fn batch_update_parameters(env: Env, admin: Address, params: Vec<ParameterUp
             return Err(Error::TimelockActive);
         }
     }
-    
+
     Ok(())
 }
 ```
@@ -150,6 +155,7 @@ pub fn batch_update_parameters(env: Env, admin: Address, params: Vec<ParameterUp
 ## Configuration
 
 ### Default Settings
+
 - **Max changes per ledger**: 3
 - **Mandatory timelock**: 7 days (604,800 seconds)
 - **Standard timelock**: 24 hours
@@ -255,13 +261,13 @@ use crate::admin::governance_activity_monitor::GovernanceActivityMonitor;
 
 pub fn admin_operation(env: Env, admin: Address) -> Result<(), Error> {
     admin.require_auth();
-    
+
     // Record activity for dead man's switch
     DeadMansSwitchContract::record_activity(&env);
-    
+
     // Record parameter change if applicable
     // ... monitor integration code
-    
+
     Ok(())
 }
 ```
@@ -274,7 +280,7 @@ Integrate with governance proposals:
 // In governance execution
 pub fn execute_governance_proposal(env: Env, proposal_id: u64) -> Result<(), Error> {
     let proposal = get_proposal(&env, proposal_id)?;
-    
+
     // Record as governance-initiated change
     let change_id = GovernanceActivityMonitor::record_parameter_change(
         env,
@@ -285,10 +291,10 @@ pub fn execute_governance_proposal(env: Env, proposal_id: u64) -> Result<(), Err
         proposal.new_state,
         proposal.description,
     )?;
-    
+
     // Execute if timelock allows
     // ... execution logic
-    
+
     Ok(())
 }
 ```
@@ -313,7 +319,8 @@ cargo test --package admin --lib governance_activity_monitor_test
 ## Security Considerations
 
 1. **Admin Privileges**: The monitor relies on proper admin authentication
-2. **State Consistency**: Ensure parameter changes are atomic with monitor updates
+2. **State Consistency**: Ensure parameter changes are atomic with monitor
+   updates
 3. **Event Logging**: Monitor all events for security auditing
 4. **Configuration Limits**: Set reasonable limits for your protocol
 5. **Emergency Procedures**: Document when and how to bypass the monitor
@@ -337,4 +344,5 @@ let activity = GovernanceActivityMonitor::get_current_ledger_activity(env)?;
 let all_changes = GovernanceActivityMonitor::get_all_changes(env)?;
 ```
 
-This integration guide provides everything needed to successfully integrate the Governance Activity Monitor into your protocol's admin functions.
+This integration guide provides everything needed to successfully integrate the
+Governance Activity Monitor into your protocol's admin functions.

@@ -2,7 +2,10 @@
 
 ## Summary
 
-Reduces ledger reads for grant status queries from ~5 SLOADs to **1 SLOAD** by introducing a tightly-packed `StreamStatus` cache mapping. Designed for high-traffic "Payday" events where hundreds of grantees query balances simultaneously.
+Reduces ledger reads for grant status queries from ~5 SLOADs to **1 SLOAD** by
+introducing a tightly-packed `StreamStatus` cache mapping. Designed for
+high-traffic "Payday" events where hundreds of grantees query balances
+simultaneously.
 
 Labels: `optimization` `performance` `backend`
 
@@ -10,7 +13,10 @@ Labels: `optimization` `performance` `backend`
 
 ## Problem
 
-`getGrantDetails()` loads the full `Grant` struct across ~5 storage slots on every call. For a Super-DAO with 500 active grants under concurrent load, that's **2,500+ ledger reads** just for status checks — driving up gas costs and slowing response times.
+`getGrantDetails()` loads the full `Grant` struct across ~5 storage slots on
+every call. For a Super-DAO with 500 active grants under concurrent load, that's
+**2,500+ ledger reads** just for status checks — driving up gas costs and
+slowing response times.
 
 ---
 
@@ -29,28 +35,29 @@ endDate    :  5 bytes (uint40)
 Total      : 29 bytes → fits in 1 slot
 ```
 
-Written once at grant creation, updated with targeted field writes on state changes. Reading it costs exactly **1 SLOAD**.
+Written once at grant creation, updated with targeted field writes on state
+changes. Reading it costs exactly **1 SLOAD**.
 
 ---
 
 ## Changes
 
-| File | Change |
-|---|---|
-| `contracts/GrantStream.sol` | Add `StreamStatus` struct + `streamStatus` mapping |
-| `contracts/GrantStream.sol` | Write cache in `createGrant` |
-| `contracts/GrantStream.sol` | Sync `active` field in `closeGrant` |
+| File                        | Change                                                     |
+| --------------------------- | ---------------------------------------------------------- |
+| `contracts/GrantStream.sol` | Add `StreamStatus` struct + `streamStatus` mapping         |
+| `contracts/GrantStream.sol` | Write cache in `createGrant`                               |
+| `contracts/GrantStream.sol` | Sync `active` field in `closeGrant`                        |
 | `contracts/GrantStream.sol` | Sync `finalReleaseApproved` field in `approveFinalRelease` |
-| `contracts/GrantStream.sol` | Add `getStreamStatus()` — 1 SLOAD |
-| `contracts/GrantStream.sol` | Add `batchGetStreamStatus()` — N SLOADs for N grants |
+| `contracts/GrantStream.sol` | Add `getStreamStatus()` — 1 SLOAD                          |
+| `contracts/GrantStream.sol` | Add `batchGetStreamStatus()` — N SLOADs for N grants       |
 
 ---
 
 ## Gas Impact
 
-| Function | Before | After |
-|---|---|---|
-| `getStreamStatus(id)` | ~5 SLOADs | **1 SLOAD** |
+| Function                      | Before     | After        |
+| ----------------------------- | ---------- | ------------ |
+| `getStreamStatus(id)`         | ~5 SLOADs  | **1 SLOAD**  |
 | `batchGetStreamStatus(ids[])` | ~5N SLOADs | **N SLOADs** |
 
 ---
@@ -74,6 +81,7 @@ GrantStream.StreamStatus[] memory statuses = grantStream.batchGetStreamStatus(id
 
 - [ ] `getStreamStatus()` returns correct values after `createGrant`
 - [ ] `active` flips to `false` in cache after `closeGrant`
-- [ ] `finalReleaseApproved` flips to `true` in cache after `approveFinalRelease`
+- [ ] `finalReleaseApproved` flips to `true` in cache after
+      `approveFinalRelease`
 - [ ] `batchGetStreamStatus()` returns correct data for all queried IDs
 - [ ] Cache and `grants` mapping stay in sync across all state transitions
