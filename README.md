@@ -1,4 +1,4 @@
-# AgriTrust-Contracts
+# YieldTrust-Contracts
 
 Smart contracts for managing trust streams with milestone completion proof hashing and integrated dispute resolution system on Stellar (Soroban WASM) and Ethereum/L2s (Solidity).
 
@@ -41,7 +41,7 @@ Ensure you have the required toolchains installed:
 
 ```bash
 # Clone the repository (if running manually)
-git clone https://github.com/AgriTrust-Protocol/AgriTrust-Contracts
+git clone https://github.com/YieldWave-Finance/YieldTrust-Contracts
 
 # Build Soroban contracts
 stellar contract build

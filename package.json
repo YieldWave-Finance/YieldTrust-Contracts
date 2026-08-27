@@ -1,7 +1,7 @@
 {
-  "name": "agritrust-contracts-api",
+  "name": "yieldtrust-contracts-api",
   "version": "1.0.0",
-  "description": "AgriTrust Protocol escrow API with legal-hold gating",
+  "description": "YieldTrust Protocol escrow API with legal-hold gating",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

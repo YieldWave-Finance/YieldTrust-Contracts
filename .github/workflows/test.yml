@@ -1,4 +1,4 @@
-name: "AgriTrust-Protocol Tests"
+name: "YieldWave-Finance Tests"
 on:
   push:
     branches: [ "main", "feature/*" ]
