@@ -1,5 +1,5 @@
 {
-  "name": "agritrust-contracts-api",
+  "name": "yieldtrust-contracts-api",
   "version": "1.0.0",
   "description": "AgriTrust Protocol escrow API with legal-hold gating",
   "license": "MIT",
